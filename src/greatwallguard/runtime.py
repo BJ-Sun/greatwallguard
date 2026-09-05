@@ -55,6 +55,7 @@ class GreatWallGuardRuntime:
         execute: Callable[[], Any] | None = None,
     ) -> tuple[Decision, Any | None]:
         current_turn = self.turn if turn is None else turn
+        source_node_ids = tuple(source_node_ids)
         action_id = self.graph.add_action(tool, arguments, turn=current_turn, observation_ids=source_node_ids)
         effects = self.contracts.infer(tool, arguments)
         for effect in effects:
@@ -83,4 +84,3 @@ class GreatWallGuardRuntime:
             object_id=f"tool://{tool}",
             raw_payload=raw_payload,
         )
-
