@@ -41,6 +41,8 @@ GreatWallGuard 是一个最小可运行的运行时防御原型，验证论文�
 ```bash
 python -m unittest discover -s tests -v
 python examples/demo_longrange.py
+# Optional: requires the AgentLAB clone and AgentDojo dependencies.
+python examples/agentlab_hook_smoke.py
 ```
 
 预期行为：报告文件写入被允许；外部工具返回不能授予外发权限；后续 `send_email` 在任务范围外被阻断；图中保留跨轮的 `write → state` 传播链。
