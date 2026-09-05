@@ -51,7 +51,7 @@ class ToolContractRegistry:
         ]
 
     def _register_defaults(self) -> None:
-        for name in ("read_file", "get_file_by_id", "list_files", "search_files", "web_fetch", "web_search", "query_database", "get_unread_emails", "get_received_emails", "search_emails"):
+        for name in ("read_file", "read_memory", "get_file_by_id", "list_files", "search_files", "web_fetch", "web_search", "query_database", "get_unread_emails", "get_received_emails", "search_emails"):
             self.register(ToolContract(name, lambda args, _name=name: [
                 Effect(EffectType.READ, _first(args, "path", "url", "table", "query", "id", default=f"tool://{_name}"), _name, persistent=False)
             ]))
@@ -78,4 +78,3 @@ class ToolContractRegistry:
         self.register(ToolContract("create_calendar_event", lambda args: [
             Effect(EffectType.CREATE, f"calendar://{_first(args, 'date', default='unknown')}", "create_calendar_event", persistent=True)
         ]))
-

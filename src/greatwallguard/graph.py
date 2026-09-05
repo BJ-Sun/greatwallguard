@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -34,6 +35,8 @@ class EffectGraph:
         self.nodes: dict[str, GraphNode] = {}
         self.edges: list[GraphEdge] = []
         self.state_versions: dict[str, int] = {}
+        self._latest_state_node: dict[str, str] = {}
+        self._effect_state_node: dict[str, str] = {}
         self._last_node_by_turn: dict[int, str] = {}
         self._counter = 0
 
@@ -68,7 +71,7 @@ class EffectGraph:
             node_id,
             NodeType.OBSERVATION,
             turn,
-            summary,
+            compact_summary(summary),
             {
                 "source": source,
                 "integrity": integrity,
@@ -76,7 +79,13 @@ class EffectGraph:
                 "digest": digest(raw_payload if raw_payload is not None else summary),
             },
         )
-        return self._add_node(node)
+        node_id = self._add_node(node)
+        # A later observation of a persistent object explicitly points back
+        # to its latest committed version.  This is the first cross-turn edge
+        # in the graph; raw conversation history is not needed to recover it.
+        if object_id and object_id in self._latest_state_node:
+            self._edge(self._latest_state_node[object_id], node_id, EdgeType.READS, turn)
+        return node_id
 
     def add_action(
         self,
@@ -114,6 +123,7 @@ class EffectGraph:
                 "operation": effect.operation,
                 "persistent": effect.persistent,
                 "reversible": effect.reversible,
+                "status": effect.metadata.get("status", "authorized"),
                 "source_node_ids": list(effect.source_node_ids),
                 "metadata": effect.metadata,
             },
@@ -122,26 +132,93 @@ class EffectGraph:
         self._edge(action_id, effect_id, EdgeType.CAUSES, effect.turn)
         for source_id in effect.source_node_ids:
             self._edge(source_id, effect_id, EdgeType.DERIVED_FROM, effect.turn)
-
-        if effect.persistent:
-            version = self.state_versions.get(effect.target, 0) + 1
-            self.state_versions[effect.target] = version
-            state_id = self._new_id("state")
-            state = GraphNode(
-                state_id,
-                NodeType.STATE,
-                effect.turn,
-                f"{effect.target}@v{version}",
-                {
-                    "object_id": effect.target,
-                    "version": version,
-                    "effect_id": effect_id,
-                    "kind": effect.kind.value,
-                },
-            )
-            self._add_node(state)
-            self._edge(effect_id, state_id, EdgeType.UPDATES, effect.turn)
         return effect_id
+
+    def commit_effect(
+        self,
+        effect_id: str,
+        *,
+        succeeded: bool,
+        result_summary: str | None = None,
+    ) -> str | None:
+        """Mark an authorized effect and materialize its state only on success."""
+        effect_node = self.nodes[effect_id]
+        effect_node.data["status"] = "succeeded" if succeeded else "failed"
+        if result_summary is not None:
+            effect_node.data["result_summary"] = compact_summary(result_summary)
+        if not succeeded or not effect_node.data.get("persistent"):
+            return None
+        if effect_id in self._effect_state_node:
+            return self._effect_state_node[effect_id]
+
+        target = str(effect_node.data["target"])
+        turn = effect_node.turn
+        version = self.state_versions.get(target, 0) + 1
+        self.state_versions[target] = version
+        state_id = self._new_id("state")
+        state = GraphNode(
+            state_id,
+            NodeType.STATE,
+            turn,
+            f"{target}@v{version}",
+            {
+                "object_id": target,
+                "version": version,
+                "effect_id": effect_id,
+                "kind": effect_node.data["kind"],
+                "status": "committed",
+            },
+        )
+        self._add_node(state)
+        self._edge(effect_id, state_id, EdgeType.UPDATES, turn)
+        self._latest_state_node[target] = state_id
+        self._effect_state_node[effect_id] = state_id
+        return state_id
+
+    def state_node(self, object_id: str) -> str | None:
+        """Return the latest committed state node for an object, if any."""
+        return self._latest_state_node.get(object_id)
+
+    def compact_view(self, *, recent_actions: int = 8) -> dict[str, Any]:
+        """Return the bounded runtime view, separate from the full audit graph.
+
+        The full graph is useful for offline auditing.  An agent-facing runtime
+        view keeps the latest version of every persistent object, aggregate
+        Effect counts, and only the recent action tail.
+        """
+        action_nodes = sorted(
+            (node for node in self.nodes.values() if node.node_type is NodeType.ACTION),
+            key=lambda node: (node.turn, node.id),
+        )
+        effect_nodes = [node for node in self.nodes.values() if node.node_type is NodeType.EFFECT]
+        states = []
+        for object_id, state_id in sorted(self._latest_state_node.items()):
+            state = self.nodes[state_id]
+            effect_id = state.data.get("effect_id")
+            effect = self.nodes.get(effect_id)
+            states.append({
+                "object_id": object_id,
+                "version": state.data.get("version"),
+                "kind": state.data.get("kind"),
+                "turn": state.turn,
+                "source_node_ids": (effect.data.get("source_node_ids", []) if effect else []),
+            })
+        return {
+            "persistent_states": states,
+            "effect_counts": dict(Counter(node.data.get("kind", "unknown") for node in effect_nodes)),
+            "recent_actions": [
+                {
+                    "turn": node.turn,
+                    "tool": node.data.get("tool"),
+                    "decision": node.data.get("decision"),
+                    "execution_status": node.data.get("execution_status"),
+                    "arguments_digest": node.data.get("arguments_digest"),
+                }
+                for node in action_nodes[-recent_actions:]
+            ],
+            "total_actions": len(action_nodes),
+            "total_effects": len(effect_nodes),
+        }
 
     def node(self, node_id: str) -> GraphNode:
         return self.nodes[node_id]
@@ -165,4 +242,3 @@ class EffectGraph:
             json.dumps(self.to_dict(), ensure_ascii=False, indent=2, default=lambda x: x.value),
             encoding="utf-8",
         )
-
