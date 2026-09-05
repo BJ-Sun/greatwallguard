@@ -6,4 +6,5 @@ dist/
 build/
 *.egg-info/
 artifacts/
-
+logs/
+experiments/results/index.json

@@ -129,3 +129,26 @@ decision, _ = hook.before_tool_call(
 - 工具语义通过显式 `ToolContractRegistry` 提供；未知工具默认产生 `unknown` Effect 并进入 `ASK`。
 - 目标匹配使用前缀和显式目的地策略，尚未接入白盒 hidden-state probe 或 LLM 意图模型。
 - 该仓库只在沙箱和离线 trace 上验证防御逻辑，不连接真实生产系统。
+
+## 图验证实验
+
+实验脚本把正常基线和 AgentLAB 攻击回放统一保存为完整图、论文最小图、
+有界运行时视图及指标。攻击侧是被动采集，不改变原有 AgentLAB 的 judge 或
+mock 工具执行路径；`--replay-success-case` 生成的是 ground-truth 工具调用的
+确定性成功路径，不计入 LLM ASR。
+
+```bash
+PYTHONPATH=src python experiments/run_graph_experiments.py \
+  --normal-turns 50 150 300 \
+  --direct-cases LONG-001 LONG-004 \
+  --replay-success-case LONG-001 \
+  --output-root experiments/results_runtime
+```
+
+需要真实 DeepSeek 回放时，使用攻击仓库已有 `.env`，并确保网络代理可用；
+结果写入指定的 `--output-root`。三类图的差异和当前缺口见
+[experiments/GRAPH_COMPARISON.md](experiments/GRAPH_COMPARISON.md)，完整结果目录见
+[experiments/RESULTS_MANIFEST.md](experiments/RESULTS_MANIFEST.md)。
+
+采集器当前通过 19 项单元测试，并以 2-turn smoke 验证正常路径、注入返回和
+持久状态读取；攻击回放仍是离线 mock，不会触发真实外部副作用。

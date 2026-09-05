@@ -279,7 +279,14 @@ class EffectGraph:
                             "relation": "consume",
                             "turn": edge.turn,
                             "data": {
-                                "role": "state" if source_node and source_node.data.get("source") in {"memory", "file"} else "data",
+                                "role": (
+                                    "state"
+                                    if source_node and (
+                                        source_node.data.get("source") in {"memory", "file", "workspace_bootstrap"}
+                                        or str(source_node.data.get("object_id", "")).startswith(("file://", "memory://"))
+                                    )
+                                    else "data"
+                                ),
                                 "integrity": source_node.data.get("integrity") if source_node else "unknown",
                             },
                         })

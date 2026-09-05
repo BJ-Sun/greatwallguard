@@ -8,6 +8,7 @@ from .runtime import GreatWallGuardRuntime
 from .adapters.agentlab import AgentLabTraceAdapter
 from .trace import TraceEventType, TraceRecorder
 from .metrics import summarize_runtime
+from .agentlab_recorder import AgentLabGraphRecorder, patch_agentlab
 
 __all__ = [
     "Decision",
@@ -23,4 +24,6 @@ __all__ = [
     "summarize_runtime",
     "TaskScope",
     "ToolContractRegistry",
+    "AgentLabGraphRecorder",
+    "patch_agentlab",
 ]
