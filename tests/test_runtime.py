@@ -113,6 +113,23 @@ class GreatWallGuardRuntimeTests(unittest.TestCase):
         self.assertEqual(compact["total_actions"], 20)
         self.assertLessEqual(len(compact["recent_actions"]), 8)
 
+    def test_minimal_projection_uses_entity_and_action_nodes(self):
+        guard = GreatWallGuardRuntime(
+            TaskScope("t8", "write report", frozenset({EffectType.CREATE}), ("file://reports/",))
+        )
+        user = guard.observe_user("write report")
+        guard.before_tool_call(
+            "create_file",
+            {"path": "file://reports/a.md", "content": "ok"},
+            source_node_ids=(user,),
+            execute=lambda: "created",
+        )
+        projected = guard.minimal_graph()
+        self.assertEqual({node["type"] for node in projected["nodes"]}, {"entity", "action"})
+        self.assertIn("consume", {edge["relation"] for edge in projected["edges"]})
+        self.assertIn("produce", {edge["relation"] for edge in projected["edges"]})
+        self.assertIn("authorize", {edge["relation"] for edge in projected["edges"]})
+
 
 if __name__ == "__main__":
     unittest.main()

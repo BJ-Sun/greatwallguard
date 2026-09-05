@@ -220,6 +220,129 @@ class EffectGraph:
             "total_effects": len(effect_nodes),
         }
 
+    def project_minimal(self, task_scope=None) -> dict[str, Any]:
+        """Project the audit ledger to the paper-level Entity / Action graph."""
+        nodes: list[dict[str, Any]] = []
+        node_map: dict[str, str] = {}
+        for node in self.nodes.values():
+            if node.node_type is NodeType.ACTION:
+                node_map[node.id] = node.id
+                nodes.append({
+                    "id": node.id,
+                    "type": "action",
+                    "turn": node.turn,
+                    "label": node.label,
+                    "data": node.data,
+                })
+            elif node.node_type in {NodeType.OBSERVATION, NodeType.STATE}:
+                entity_id = f"x-{node.id}"
+                node_map[node.id] = entity_id
+                nodes.append({
+                    "id": entity_id,
+                    "type": "entity",
+                    "turn": node.turn,
+                    "label": node.label,
+                    "data": {"kind": node.node_type.value, **node.data},
+                })
+
+        effect_target_map: dict[str, str] = {}
+        for effect in (node for node in self.nodes.values() if node.node_type is NodeType.EFFECT):
+            state_id = self._effect_state_node.get(effect.id)
+            if state_id:
+                effect_target_map[effect.id] = node_map[state_id]
+                continue
+            entity_id = f"x-{effect.id}"
+            effect_target_map[effect.id] = entity_id
+            nodes.append({
+                "id": entity_id,
+                "type": "entity",
+                "turn": effect.turn,
+                "label": effect.label,
+                "data": {
+                    "kind": "effect_target",
+                    "target": effect.data.get("target"),
+                    "persistent": False,
+                },
+            })
+
+        edges: list[dict[str, Any]] = []
+        for edge in self.edges:
+            if edge.edge_type is EdgeType.DERIVED_FROM and edge.target in self.nodes:
+                target_node = self.nodes[edge.target]
+                if target_node.node_type is NodeType.ACTION:
+                    source = node_map.get(edge.source)
+                    if source:
+                        source_node = self.nodes.get(edge.source)
+                        edges.append({
+                            "source": source,
+                            "target": edge.target,
+                            "relation": "consume",
+                            "turn": edge.turn,
+                            "data": {
+                                "role": "state" if source_node and source_node.data.get("source") in {"memory", "file"} else "data",
+                                "integrity": source_node.data.get("integrity") if source_node else "unknown",
+                            },
+                        })
+            elif edge.edge_type is EdgeType.CAUSES:
+                target = effect_target_map.get(edge.target)
+                if target:
+                    effect = self.nodes[edge.target]
+                    edges.append({
+                        "source": edge.source,
+                        "target": target,
+                        "relation": "produce",
+                        "turn": edge.turn,
+                        "data": {
+                            "effect_kind": effect.data.get("kind"),
+                            "target_object": effect.data.get("target"),
+                            "persistent": effect.data.get("persistent", False),
+                            "status": effect.data.get("status"),
+                        },
+                    })
+            elif edge.edge_type is EdgeType.READS:
+                # State → observation → action becomes a single consume edge.
+                for follow in self.edges:
+                    if follow.edge_type is EdgeType.DERIVED_FROM and follow.source == edge.target and follow.target in self.nodes and self.nodes[follow.target].node_type is NodeType.ACTION:
+                        edges.append({
+                            "source": node_map.get(edge.source),
+                            "target": follow.target,
+                            "relation": "consume",
+                            "turn": edge.turn,
+                            "data": {"role": "state", "activation": True},
+                        })
+            elif edge.edge_type is EdgeType.NEXT:
+                if edge.source in self.nodes and edge.target in self.nodes and self.nodes[edge.source].node_type is NodeType.ACTION and self.nodes[edge.target].node_type is NodeType.ACTION:
+                    edges.append({
+                        "source": edge.source,
+                        "target": edge.target,
+                        "relation": "precede",
+                        "turn": edge.turn,
+                        "data": {},
+                    })
+
+        if task_scope is not None:
+            scope_id = f"scope-{task_scope.task_id}"
+            nodes.append({
+                "id": scope_id,
+                "type": "entity",
+                "turn": 0,
+                "label": task_scope.intent,
+                "data": {"kind": "task_scope", "task_id": task_scope.task_id},
+            })
+            for action in (node for node in self.nodes.values() if node.node_type is NodeType.ACTION):
+                edges.append({
+                    "source": scope_id,
+                    "target": action.id,
+                    "relation": "authorize",
+                    "turn": action.turn,
+                    "data": {
+                        "decision": action.data.get("decision"),
+                        "reason": action.data.get("reason"),
+                    },
+                })
+
+        return {"nodes": nodes, "edges": edges}
+
     def node(self, node_id: str) -> GraphNode:
         return self.nodes[node_id]
 

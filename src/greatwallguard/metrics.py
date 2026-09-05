@@ -19,6 +19,7 @@ def summarize_runtime(runtime, *, raw_payload_chars: int = 0) -> dict[str, Any]:
     committed_effects = sum(node.data.get("status") == "succeeded" for node in effect_nodes)
     graph_bytes = len(json.dumps(runtime.trace_dict(), ensure_ascii=False, default=str).encode("utf-8"))
     compact_bytes = len(json.dumps(runtime.compact_context(), ensure_ascii=False, default=str).encode("utf-8"))
+    minimal_bytes = len(json.dumps(runtime.minimal_graph(), ensure_ascii=False, default=str).encode("utf-8"))
     return {
         "turns": runtime.turn,
         "nodes": len(graph.nodes),
@@ -38,4 +39,6 @@ def summarize_runtime(runtime, *, raw_payload_chars: int = 0) -> dict[str, Any]:
         "graph_to_raw_ratio": graph_bytes / max(raw_payload_chars, 1),
         "compact_bytes": compact_bytes,
         "compact_to_raw_ratio": compact_bytes / max(raw_payload_chars, 1),
+        "minimal_graph_bytes": minimal_bytes,
+        "minimal_graph_to_raw_ratio": minimal_bytes / max(raw_payload_chars, 1),
     }

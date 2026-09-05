@@ -186,3 +186,6 @@ class GreatWallGuardRuntime:
             },
             **self.graph.compact_view(recent_actions=recent_actions),
         }
+
+    def minimal_graph(self) -> dict[str, Any]:
+        return self.graph.project_minimal(self.scope)
