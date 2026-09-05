@@ -1,6 +1,7 @@
 import unittest
 
 from greatwallguard import DecisionKind, EffectType, GreatWallGuardRuntime, TaskScope
+from greatwallguard.adapters import AgentLabTraceAdapter
 
 
 class GreatWallGuardRuntimeTests(unittest.TestCase):
@@ -73,6 +74,21 @@ class GreatWallGuardRuntimeTests(unittest.TestCase):
         serialized = str(guard.graph.to_dict())
         self.assertNotIn("TOP-SECRET", serialized)
         self.assertIn("digest", guard.graph.node(node_id).data)
+
+    def test_agentlab_hook_marks_injected_return_as_untrusted(self):
+        guard = GreatWallGuardRuntime(
+            TaskScope("t6", "send approved report", frozenset({EffectType.SEND}), (), ("attacker@example.net",))
+        )
+        hook = AgentLabTraceAdapter(guard)
+        hook.on_user_message("send approved report")
+        poison = hook.on_tool_return("search_files", "opaque injected result", injected=True)
+        decision, _ = hook.before_tool_call(
+            "send_email",
+            {"to": "attacker@example.net", "body": "report"},
+            source_node_ids=(poison,),
+            execute=lambda: "must not run",
+        )
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
 
 
 if __name__ == "__main__":

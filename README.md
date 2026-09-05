@@ -45,6 +45,31 @@ python examples/demo_longrange.py
 
 预期行为：报告文件写入被允许；外部工具返回不能授予外发权限；后续 `send_email` 在任务范围外被阻断；图中保留跨轮的 `write → state` 传播链。
 
+## 与 OpenClaw AgentLAB 对接
+
+防御原型已用 `BJ-Sun/openclaw-agentlab` 的最新分支 `openclaw-agent-ljh`（commit `d10cbdd`）做过受控回放。AgentLAB 的 `VictimAgent` / `DojoSkillBridge` 只需要在工具返回和工具调用边界接入两个 hook：
+
+```python
+from greatwallguard import EffectType, GreatWallGuardRuntime, TaskScope
+from greatwallguard.adapters import AgentLabTraceAdapter
+
+guard = GreatWallGuardRuntime(TaskScope(
+    task_id="agentlab-case-001",
+    intent="Read the event data and prepare an internal report.",
+    allowed_effects=frozenset({EffectType.READ, EffectType.WRITE, EffectType.CREATE}),
+    allowed_resources=("file://reports/",),
+))
+hook = AgentLabTraceAdapter(guard)
+hook.on_user_message(user_task)
+poison_id = hook.on_tool_return("search_calendar_events", "opaque result", injected=True)
+decision, _ = hook.before_tool_call(
+    "send_email", {"to": "external@example.net", "body": "..."},
+    source_node_ids=(poison_id,), execute=lambda: bridge.call(...),
+)
+```
+
+这次回放使用 AgentDojo `workspace/user_task_0+injection_task_0` seed，跨会话链路包含污染、`MEMORY.md` 生成和后续激活；结果和完整日志保存在攻击仓库的 `results/repro_workspace_s2_cross_short.json` 与 `.log` 中。
+
 ## 与现有 CFG / DFG / provenance 图的关系
 
 现有图方法主要表示当前动作由什么来源、控制流或数据依赖驱动，并据此做局部异常或白名单检查。本原型不替代这些图，而是在其上增加一层跨轮的持久状态压缩：图的安全对象不是“某个来源天然恶意”，而是“某次行为实际改变了什么，以及该改变是否被当前任务授权”。
@@ -54,4 +79,3 @@ python examples/demo_longrange.py
 - 工具语义通过显式 `ToolContractRegistry` 提供；未知工具默认产生 `unknown` Effect 并进入 `ASK`。
 - 目标匹配使用前缀和显式目的地策略，尚未接入白盒 hidden-state probe 或 LLM 意图模型。
 - 该仓库只在沙箱和离线 trace 上验证防御逻辑，不连接真实生产系统。
-
