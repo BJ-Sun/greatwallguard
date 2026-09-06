@@ -176,7 +176,13 @@ class GreatWallGuardRuntime:
             "graph": self.graph.to_dict(),
         }
 
-    def compact_context(self, *, recent_actions: int = 8) -> dict[str, Any]:
+    def compact_context(
+        self,
+        *,
+        recent_actions: int = 8,
+        max_states: int = 32,
+        max_sources_per_state: int = 4,
+    ) -> dict[str, Any]:
         """Return the bounded semantic context intended for runtime checks."""
         return {
             "task_scope": {
@@ -184,7 +190,11 @@ class GreatWallGuardRuntime:
                 "intent": self.scope.intent,
                 "allowed_effects": sorted(effect.value for effect in self.scope.allowed_effects),
             },
-            **self.graph.compact_view(recent_actions=recent_actions),
+            **self.graph.compact_view(
+                recent_actions=recent_actions,
+                max_states=max_states,
+                max_sources_per_state=max_sources_per_state,
+            ),
         }
 
     def minimal_graph(self) -> dict[str, Any]:

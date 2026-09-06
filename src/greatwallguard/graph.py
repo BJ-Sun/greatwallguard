@@ -179,32 +179,56 @@ class EffectGraph:
         """Return the latest committed state node for an object, if any."""
         return self._latest_state_node.get(object_id)
 
-    def compact_view(self, *, recent_actions: int = 8) -> dict[str, Any]:
-        """Return the bounded runtime view, separate from the full audit graph.
+    def compact_view(
+        self,
+        *,
+        recent_actions: int = 8,
+        max_states: int = 32,
+        max_sources_per_state: int = 4,
+    ) -> dict[str, Any]:
+        """Return a budgeted runtime view, separate from the full audit graph.
 
-        The full graph is useful for offline auditing.  An agent-facing runtime
-        view keeps the latest version of every persistent object, aggregate
-        Effect counts, and only the recent action tail.
+        The full graph is useful for offline auditing.  The agent-facing view
+        keeps only the newest ``max_states`` persistent objects, aggregate
+        Effect counts, and a fixed action tail.  Older state objects are
+        represented by counts and a digest so the view remains bounded without
+        discarding evidence that additional state exists.
         """
+        if max_states < 0 or max_sources_per_state < 0 or recent_actions < 0:
+            raise ValueError("compact view budgets must be non-negative")
         action_nodes = sorted(
             (node for node in self.nodes.values() if node.node_type is NodeType.ACTION),
             key=lambda node: (node.turn, node.id),
         )
         effect_nodes = [node for node in self.nodes.values() if node.node_type is NodeType.EFFECT]
-        states = []
-        for object_id, state_id in sorted(self._latest_state_node.items()):
+        all_states = []
+        for object_id, state_id in self._latest_state_node.items():
             state = self.nodes[state_id]
             effect_id = state.data.get("effect_id")
             effect = self.nodes.get(effect_id)
-            states.append({
+            sources = list(effect.data.get("source_node_ids", []) if effect else [])
+            all_states.append({
                 "object_id": object_id,
                 "version": state.data.get("version"),
                 "kind": state.data.get("kind"),
                 "turn": state.turn,
-                "source_node_ids": (effect.data.get("source_node_ids", []) if effect else []),
+                "source_node_ids": sources[:max_sources_per_state],
+                "source_count": len(sources),
             })
+        all_states.sort(key=lambda state: (state["turn"], state["object_id"]), reverse=True)
+        states = all_states[:max_states]
+        omitted_states = all_states[max_states:]
         return {
+            "schema_version": "gwg-compact-v2",
             "persistent_states": states,
+            "state_budget": {
+                "max_states": max_states,
+                "total_objects": len(all_states),
+                "included_objects": len(states),
+                "omitted_objects": len(omitted_states),
+                "omitted_kinds": dict(Counter(state["kind"] for state in omitted_states)),
+                "omitted_object_digest": digest([state["object_id"] for state in omitted_states]) if omitted_states else None,
+            },
             "effect_counts": dict(Counter(node.data.get("kind", "unknown") for node in effect_nodes)),
             "recent_actions": [
                 {

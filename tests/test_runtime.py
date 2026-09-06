@@ -113,6 +113,30 @@ class GreatWallGuardRuntimeTests(unittest.TestCase):
         self.assertEqual(compact["total_actions"], 20)
         self.assertLessEqual(len(compact["recent_actions"]), 8)
 
+    def test_compact_context_caps_persistent_state_objects(self):
+        guard = GreatWallGuardRuntime(
+            TaskScope(
+                "t7b",
+                "create reports",
+                frozenset({EffectType.CREATE}),
+                ("file://reports/",),
+            )
+        )
+        user = guard.observe_user("create reports")
+        for index in range(40):
+            guard.before_tool_call(
+                "create_file",
+                {"path": f"file://reports/{index}.md"},
+                source_node_ids=(user,),
+                execute=lambda index=index: f"created {index}",
+            )
+        compact = guard.compact_context(max_states=8)
+        self.assertEqual(compact["schema_version"], "gwg-compact-v2")
+        self.assertEqual(len(compact["persistent_states"]), 8)
+        self.assertEqual(compact["state_budget"]["total_objects"], 40)
+        self.assertEqual(compact["state_budget"]["omitted_objects"], 32)
+        self.assertIsNotNone(compact["state_budget"]["omitted_object_digest"])
+
     def test_minimal_projection_uses_entity_and_action_nodes(self):
         guard = GreatWallGuardRuntime(
             TaskScope("t8", "write report", frozenset({EffectType.CREATE}), ("file://reports/",))

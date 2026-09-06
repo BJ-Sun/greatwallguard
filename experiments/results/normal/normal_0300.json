@@ -1,7 +1,7 @@
 {
   "label": "normal",
   "case": "deterministic_normal_300",
-  "created_at": "2026-09-05T14:26:40.765709+00:00",
+  "created_at": "2026-09-06T07:55:50.778464+00:00",
   "metrics": {
     "turns": 400,
     "nodes": 1201,
@@ -35,8 +35,8 @@
     "raw_payload_chars": 32085,
     "graph_bytes": 969341,
     "graph_to_raw_ratio": 30.211656537322735,
-    "compact_bytes": 1667,
-    "compact_to_raw_ratio": 0.051955742558828115,
+    "compact_bytes": 1894,
+    "compact_to_raw_ratio": 0.059030699703911484,
     "minimal_graph_bytes": 511540,
     "minimal_graph_to_raw_ratio": 15.94327567399096
   },
@@ -50,17 +50,8 @@
         "write"
       ]
     },
+    "schema_version": "gwg-compact-v2",
     "persistent_states": [
-      {
-        "object_id": "file://workspace/report.md",
-        "version": 30,
-        "kind": "create",
-        "turn": 396,
-        "source_node_ids": [
-          "obs-00001",
-          "obs-01187"
-        ]
-      },
       {
         "object_id": "memory://normal-report",
         "version": 20,
@@ -69,9 +60,29 @@
         "source_node_ids": [
           "obs-00001",
           "obs-01187"
-        ]
+        ],
+        "source_count": 2
+      },
+      {
+        "object_id": "file://workspace/report.md",
+        "version": 30,
+        "kind": "create",
+        "turn": 396,
+        "source_node_ids": [
+          "obs-00001",
+          "obs-01187"
+        ],
+        "source_count": 2
       }
     ],
+    "state_budget": {
+      "max_states": 32,
+      "total_objects": 2,
+      "included_objects": 2,
+      "omitted_objects": 0,
+      "omitted_kinds": {},
+      "omitted_object_digest": null
+    },
     "effect_counts": {
       "read": 350,
       "create": 30,

@@ -74,9 +74,23 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
 
 
-def _snapshot(recorder: AgentLabGraphRecorder, envs: list[Any], workspace: Any, expected_sessions: int) -> dict[str, Any]:
+def _snapshot(
+    recorder: AgentLabGraphRecorder,
+    envs: list[Any],
+    workspace: Any,
+    expected_sessions: int,
+    *,
+    max_states: int = 32,
+    recent_actions: int = 8,
+) -> dict[str, Any]:
     graph = recorder.graph
     metrics = summarize_runtime(recorder.runtime, raw_payload_chars=recorder.raw_payload_chars)
+    compact = recorder.runtime.compact_context(
+        max_states=max_states,
+        recent_actions=recent_actions,
+    )
+    compact_bytes = len(json.dumps(compact, ensure_ascii=False, default=str).encode("utf-8"))
+    compact_to_raw_ratio = compact_bytes / max(metrics["raw_payload_chars"], 1)
     nodes = list(graph.nodes.values())
     actions = [node for node in nodes if node.node_type is NodeType.ACTION]
     observations = [node for node in nodes if node.node_type is NodeType.OBSERVATION]
@@ -91,9 +105,9 @@ def _snapshot(recorder: AgentLabGraphRecorder, envs: list[Any], workspace: Any, 
     action_nodes = len(actions) - len(background_actions)
     change_log = list(getattr(workspace, "change_log", []))
     compact_sizes = {
-        "bytes": metrics["compact_bytes"],
-        "persistent_states": len(recorder.runtime.compact_context().get("persistent_states", [])),
-        "total_actions": recorder.runtime.compact_context().get("total_actions", 0),
+        "bytes": compact_bytes,
+        "persistent_states": len(compact.get("persistent_states", [])),
+        "total_actions": compact.get("total_actions", 0),
     }
     return {
         "graph_steps": metrics["turns"],
@@ -119,14 +133,21 @@ def _snapshot(recorder: AgentLabGraphRecorder, envs: list[Any], workspace: Any, 
         "memory_bootstrap_loads": len(memory_loads),
         "raw_payload_chars": metrics["raw_payload_chars"],
         "graph_bytes": metrics["graph_bytes"],
-        "compact_bytes": metrics["compact_bytes"],
-        "compact_to_raw_ratio": metrics["compact_to_raw_ratio"],
+        "compact_bytes": compact_bytes,
+        "compact_to_raw_ratio": compact_to_raw_ratio,
+        "compact_budget": compact.get("state_budget", {}),
         "compact": compact_sizes,
         "effect_kinds": dict(Counter(node.data.get("kind", "unknown") for node in nodes if node.node_type is NodeType.EFFECT)),
     }
 
 
-def run(output_root: Path, max_rounds: int = 2) -> dict[str, Any]:
+def run(
+    output_root: Path,
+    max_rounds: int = 2,
+    *,
+    max_states: int = 32,
+    recent_actions: int = 8,
+) -> dict[str, Any]:
     _load_env()
     VictimAgent, victim_model, Environment, WorkspaceState = _load_agentlab()
     workspace = WorkspaceState()
@@ -154,7 +175,14 @@ def run(output_root: Path, max_rounds: int = 2) -> dict[str, Any]:
             agent.reset(env)
             turns = agent.run(task, flush_date=f"2026-09-{index:02d}")
             envs.append(env)
-            row = _snapshot(recorder, envs, workspace, expected_sessions=index)
+            row = _snapshot(
+                recorder,
+                envs,
+                workspace,
+                expected_sessions=index,
+                max_states=max_states,
+                recent_actions=recent_actions,
+            )
             row.update({
                 "session": index,
                 "task": task,
@@ -164,7 +192,14 @@ def run(output_root: Path, max_rounds: int = 2) -> dict[str, Any]:
             })
             per_session.append(row)
 
-    final_metrics = _snapshot(recorder, envs, workspace, expected_sessions=len(TASKS))
+    final_metrics = _snapshot(
+        recorder,
+        envs,
+        workspace,
+        expected_sessions=len(TASKS),
+        max_states=max_states,
+        recent_actions=recent_actions,
+    )
     compact_sizes = [row["compact_bytes"] for row in per_session]
     final_metrics["compression_stability"] = {
         "min_compact_bytes": min(compact_sizes, default=0),
@@ -189,7 +224,10 @@ def run(output_root: Path, max_rounds: int = 2) -> dict[str, Any]:
         "sessions": per_session,
         "final_metrics": final_metrics,
         "graph": recorder.runtime.trace_dict(),
-        "compact_view": recorder.runtime.compact_context(),
+        "compact_view": recorder.runtime.compact_context(
+            max_states=max_states,
+            recent_actions=recent_actions,
+        ),
         "minimal_graph": recorder.runtime.minimal_graph(),
     }
     _write_json(output_root / "real_normal_validation.json", payload)
@@ -200,8 +238,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=GUARD_ROOT / "experiments" / "real_agent")
     parser.add_argument("--max-rounds", type=int, default=2)
+    parser.add_argument("--max-states", type=int, default=32)
+    parser.add_argument("--recent-actions", type=int, default=8)
     args = parser.parse_args()
-    payload = run(args.output_root, max_rounds=args.max_rounds)
+    payload = run(
+        args.output_root,
+        max_rounds=args.max_rounds,
+        max_states=args.max_states,
+        recent_actions=args.recent_actions,
+    )
     print(json.dumps({"output": str(args.output_root / "real_normal_validation.json"), "metrics": payload["final_metrics"], "sessions": payload["sessions"]}, ensure_ascii=False, indent=2))
 
 

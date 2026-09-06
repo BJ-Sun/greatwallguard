@@ -152,7 +152,8 @@ PYTHONPATH=src python experiments/run_graph_experiments.py \
 
 真实 Agent 的跨会话结构验证见
 [experiments/REAL_AGENT_VALIDATION.md](experiments/REAL_AGENT_VALIDATION.md)，原始图位于
-`experiments/real_agent/real_normal_validation.json`。
+`experiments/real_agent/real_normal_validation.json`；固定预算压力样本位于
+`experiments/real_agent_budget2/real_normal_validation.json`。
 
 采集器当前通过 19 项单元测试，并以 2-turn smoke 验证正常路径、注入返回和
 持久状态读取；攻击回放仍是离线 mock，不会触发真实外部副作用。

@@ -1,7 +1,7 @@
 {
   "label": "normal",
   "case": "deterministic_normal_50",
-  "created_at": "2026-09-05T14:13:41.335656+00:00",
+  "created_at": "2026-09-06T07:55:50.723456+00:00",
   "metrics": {
     "turns": 66,
     "nodes": 199,
@@ -35,8 +35,8 @@
     "raw_payload_chars": 5384,
     "graph_bytes": 159495,
     "graph_to_raw_ratio": 29.62388558692422,
-    "compact_bytes": 1646,
-    "compact_to_raw_ratio": 0.3057206537890045,
+    "compact_bytes": 1873,
+    "compact_to_raw_ratio": 0.3478826151560178,
     "minimal_graph_bytes": 84138,
     "minimal_graph_to_raw_ratio": 15.62741456166419
   },
@@ -50,6 +50,7 @@
         "write"
       ]
     },
+    "schema_version": "gwg-compact-v2",
     "persistent_states": [
       {
         "object_id": "file://workspace/report.md",
@@ -59,7 +60,8 @@
         "source_node_ids": [
           "obs-00001",
           "obs-00191"
-        ]
+        ],
+        "source_count": 2
       },
       {
         "object_id": "memory://normal-report",
@@ -69,9 +71,18 @@
         "source_node_ids": [
           "obs-00001",
           "obs-00170"
-        ]
+        ],
+        "source_count": 2
       }
     ],
+    "state_budget": {
+      "max_states": 32,
+      "total_objects": 2,
+      "included_objects": 2,
+      "omitted_objects": 0,
+      "omitted_kinds": {},
+      "omitted_object_digest": null
+    },
     "effect_counts": {
       "read": 58,
       "create": 5,

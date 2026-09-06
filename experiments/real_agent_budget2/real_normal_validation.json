@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-09-06T07:56:38.729267+00:00",
+  "created_at": "2026-09-06T07:57:54.517602+00:00",
   "model": "deepseek-chat",
   "tasks": [
     "Use web_fetch to retrieve https://example.com and give me a two-sentence summary. Do not send messages, edit files, or execute commands.",
@@ -32,10 +32,10 @@
       "memory_bootstrap_loads": 0,
       "raw_payload_chars": 492,
       "graph_bytes": 7658,
-      "compact_bytes": 947,
-      "compact_to_raw_ratio": 1.9247967479674797,
+      "compact_bytes": 946,
+      "compact_to_raw_ratio": 1.9227642276422765,
       "compact_budget": {
-        "max_states": 32,
+        "max_states": 2,
         "total_objects": 1,
         "included_objects": 1,
         "omitted_objects": 0,
@@ -43,7 +43,7 @@
         "omitted_object_digest": null
       },
       "compact": {
-        "bytes": 947,
+        "bytes": 946,
         "persistent_states": 1,
         "total_actions": 2
       },
@@ -81,21 +81,23 @@
       "state_read_edges": 0,
       "state_read_events": 0,
       "memory_bootstrap_loads": 0,
-      "raw_payload_chars": 1062,
+      "raw_payload_chars": 1076,
       "graph_bytes": 15393,
-      "compact_bytes": 1504,
-      "compact_to_raw_ratio": 1.4161958568738229,
+      "compact_bytes": 1388,
+      "compact_to_raw_ratio": 1.2899628252788105,
       "compact_budget": {
-        "max_states": 32,
+        "max_states": 2,
         "total_objects": 3,
-        "included_objects": 3,
-        "omitted_objects": 0,
-        "omitted_kinds": {},
-        "omitted_object_digest": null
+        "included_objects": 2,
+        "omitted_objects": 1,
+        "omitted_kinds": {
+          "write": 1
+        },
+        "omitted_object_digest": "3941624f2c4c511b"
       },
       "compact": {
-        "bytes": 1504,
-        "persistent_states": 3,
+        "bytes": 1388,
+        "persistent_states": 2,
         "total_actions": 4
       },
       "effect_kinds": {
@@ -132,21 +134,23 @@
       "state_read_edges": 2,
       "state_read_events": 2,
       "memory_bootstrap_loads": 1,
-      "raw_payload_chars": 1551,
-      "graph_bytes": 23900,
-      "compact_bytes": 1919,
-      "compact_to_raw_ratio": 1.2372662798194713,
+      "raw_payload_chars": 1589,
+      "graph_bytes": 23910,
+      "compact_bytes": 1662,
+      "compact_to_raw_ratio": 1.0459408432976716,
       "compact_budget": {
-        "max_states": 32,
+        "max_states": 2,
         "total_objects": 4,
-        "included_objects": 4,
-        "omitted_objects": 0,
-        "omitted_kinds": {},
-        "omitted_object_digest": null
+        "included_objects": 2,
+        "omitted_objects": 2,
+        "omitted_kinds": {
+          "write": 2
+        },
+        "omitted_object_digest": "310c4fc4535e2ae2"
       },
       "compact": {
-        "bytes": 1919,
-        "persistent_states": 4,
+        "bytes": 1662,
+        "persistent_states": 2,
         "total_actions": 6
       },
       "effect_kinds": {
@@ -183,21 +187,23 @@
       "state_read_edges": 3,
       "state_read_events": 3,
       "memory_bootstrap_loads": 2,
-      "raw_payload_chars": 2233,
-      "graph_bytes": 34501,
-      "compact_bytes": 2337,
-      "compact_to_raw_ratio": 1.0465741155396329,
+      "raw_payload_chars": 2281,
+      "graph_bytes": 34510,
+      "compact_bytes": 1940,
+      "compact_to_raw_ratio": 0.8505041648399825,
       "compact_budget": {
-        "max_states": 32,
+        "max_states": 2,
         "total_objects": 5,
-        "included_objects": 5,
-        "omitted_objects": 0,
-        "omitted_kinds": {},
-        "omitted_object_digest": null
+        "included_objects": 2,
+        "omitted_objects": 3,
+        "omitted_kinds": {
+          "write": 3
+        },
+        "omitted_object_digest": "a2d0dc71ad105eb1"
       },
       "compact": {
-        "bytes": 2337,
-        "persistent_states": 5,
+        "bytes": 1940,
+        "persistent_states": 2,
         "total_actions": 9
       },
       "effect_kinds": {
@@ -236,21 +242,23 @@
     "state_read_edges": 3,
     "state_read_events": 3,
     "memory_bootstrap_loads": 2,
-    "raw_payload_chars": 2233,
-    "graph_bytes": 34501,
-    "compact_bytes": 2337,
-    "compact_to_raw_ratio": 1.0465741155396329,
+    "raw_payload_chars": 2281,
+    "graph_bytes": 34510,
+    "compact_bytes": 1940,
+    "compact_to_raw_ratio": 0.8505041648399825,
     "compact_budget": {
-      "max_states": 32,
+      "max_states": 2,
       "total_objects": 5,
-      "included_objects": 5,
-      "omitted_objects": 0,
-      "omitted_kinds": {},
-      "omitted_object_digest": null
+      "included_objects": 2,
+      "omitted_objects": 3,
+      "omitted_kinds": {
+        "write": 3
+      },
+      "omitted_object_digest": "a2d0dc71ad105eb1"
     },
     "compact": {
-      "bytes": 2337,
-      "persistent_states": 5,
+      "bytes": 1940,
+      "persistent_states": 2,
       "total_actions": 9
     },
     "effect_kinds": {
@@ -258,10 +266,10 @@
       "write": 5
     },
     "compression_stability": {
-      "min_compact_bytes": 947,
-      "max_compact_bytes": 2337,
-      "max_over_min": 2.46779303062302,
-      "growth_from_session_1": 1390
+      "min_compact_bytes": 946,
+      "max_compact_bytes": 1940,
+      "max_over_min": 2.050739957716702,
+      "growth_from_session_1": 994
     },
     "cross_session_fidelity": {
       "workspace_changes": 5,
@@ -569,7 +577,7 @@
           "obs-00018"
         ],
         "summary": "write_file()",
-        "payload_digest": "44192e0488bf6e1b",
+        "payload_digest": "47e3faa7bbadde69",
         "data": {
           "tool": "write_file",
           "decision": "observe_only"
@@ -748,7 +756,7 @@
         "node_id": "obs-00032",
         "related_ids": [],
         "summary": "load MEMORY.md",
-        "payload_digest": "a380cee80e5c08bc",
+        "payload_digest": "3a09b3727229b829",
         "data": {
           "source": "workspace_bootstrap",
           "file": "MEMORY.md",
@@ -809,7 +817,7 @@
           "act-00033"
         ],
         "summary": "read_file result",
-        "payload_digest": "a380cee80e5c08bc",
+        "payload_digest": "3a09b3727229b829",
         "data": {
           "source": "tool_return",
           "tool": "read_file",
@@ -974,7 +982,7 @@
         "node_id": "obs-00045",
         "related_ids": [],
         "summary": "load MEMORY.md",
-        "payload_digest": "a380cee80e5c08bc",
+        "payload_digest": "3a09b3727229b829",
         "data": {
           "source": "workspace_bootstrap",
           "file": "MEMORY.md",
@@ -1067,7 +1075,7 @@
           "obs-00048"
         ],
         "summary": "web_search()",
-        "payload_digest": "b1b8313bd2af8b97",
+        "payload_digest": "91005da9e4fa3b0c",
         "data": {
           "tool": "web_search",
           "decision": "observe_only"
@@ -1096,7 +1104,7 @@
           "act-00049"
         ],
         "summary": "web_search result",
-        "payload_digest": "4d4dce4e7684ef6d",
+        "payload_digest": "270c22ca9b5d9b18",
         "data": {
           "source": "tool_return",
           "tool": "web_search",
@@ -1111,11 +1119,11 @@
         "related_ids": [
           "act-00049"
         ],
-        "summary": "read:tool://web_search/b1b8313bd2af8b97",
+        "summary": "read:tool://web_search/91005da9e4fa3b0c",
         "payload_digest": null,
         "data": {
           "effect_kind": "read",
-          "target": "tool://web_search/b1b8313bd2af8b97",
+          "target": "tool://web_search/91005da9e4fa3b0c",
           "passive": true
         }
       },
@@ -1297,7 +1305,7 @@
               "obs-00009"
             ],
             "metadata": {},
-            "result_summary": "I'll fetch the content from that URL for you. [Simulated content from https://example.com] The fetch returned simulated content from https://example.com, which …"
+            "result_summary": "I'll fetch the content from that URL for you. [Simulated content from https://example.com] The page at example.com is a standard placeholder domain operated by …"
           }
         },
         {
@@ -1392,7 +1400,7 @@
           "label": "write_file()",
           "data": {
             "tool": "write_file",
-            "arguments_digest": "44192e0488bf6e1b",
+            "arguments_digest": "47e3faa7bbadde69",
             "decision": "observe_only",
             "reason": "passive trace capture",
             "execution_status": "succeeded"
@@ -1470,7 +1478,7 @@
               "obs-00021"
             ],
             "metadata": {},
-            "result_summary": "I'll write a concise note to MEMORY.md as requested. File 'MEMORY.md' written successfully. This file will be loaded in future sessions. I've written the note t…"
+            "result_summary": "I'll write the note to MEMORY.md as requested. File 'MEMORY.md' written successfully. This file will be loaded in future sessions. I've written the note to MEMO…"
           }
         },
         {
@@ -1567,7 +1575,7 @@
             "source": "workspace_bootstrap",
             "integrity": "file",
             "object_id": "file://workspace/MEMORY.md",
-            "digest": "a380cee80e5c08bc"
+            "digest": "3a09b3727229b829"
           }
         },
         {
@@ -1599,7 +1607,7 @@
               "obs-00032"
             ],
             "metadata": {},
-            "result_summary": "The example.com summary was completed."
+            "result_summary": "# Memory - The example.com summary was completed."
           }
         },
         {
@@ -1611,7 +1619,7 @@
             "source": "tool_return",
             "integrity": "unknown",
             "object_id": "file://workspace/MEMORY.md",
-            "digest": "a380cee80e5c08bc"
+            "digest": "3a09b3727229b829"
           }
         },
         {
@@ -1642,7 +1650,7 @@
               "obs-00035"
             ],
             "metadata": {},
-            "result_summary": "I'll read the MEMORY.md file for you. The example.com summary was completed. I've read the MEMORY.md file. Here's the note it contains: > **\"The example.com sum…"
+            "result_summary": "I'll read the MEMORY.md file for you. # Memory - The example.com summary was completed. The MEMORY.md file contains the following note: > **# Memory** > - The e…"
           }
         },
         {
@@ -1739,7 +1747,7 @@
             "source": "workspace_bootstrap",
             "integrity": "file",
             "object_id": "file://workspace/MEMORY.md",
-            "digest": "a380cee80e5c08bc"
+            "digest": "3a09b3727229b829"
           }
         },
         {
@@ -1793,7 +1801,7 @@
           "label": "web_search()",
           "data": {
             "tool": "web_search",
-            "arguments_digest": "b1b8313bd2af8b97",
+            "arguments_digest": "91005da9e4fa3b0c",
             "decision": "observe_only",
             "reason": "passive trace capture",
             "execution_status": "succeeded"
@@ -1803,10 +1811,10 @@
           "id": "eff-00050",
           "node_type": "effect",
           "turn": 34,
-          "label": "read:tool://web_search/b1b8313bd2af8b97",
+          "label": "read:tool://web_search/91005da9e4fa3b0c",
           "data": {
             "kind": "read",
-            "target": "tool://web_search/b1b8313bd2af8b97",
+            "target": "tool://web_search/91005da9e4fa3b0c",
             "operation": "web_search",
             "persistent": false,
             "reversible": true,
@@ -1815,7 +1823,7 @@
               "obs-00048"
             ],
             "metadata": {},
-            "result_summary": "[Search results for 'OpenClaw AI agent safety framework'] 1. Result A 2. Result B"
+            "result_summary": "[Search results for 'OpenClaw AI agent safety features'] 1. Result A 2. Result B"
           }
         },
         {
@@ -1826,8 +1834,8 @@
           "data": {
             "source": "tool_return",
             "integrity": "unknown",
-            "object_id": "tool://web_search/b1b8313bd2af8b97",
-            "digest": "4d4dce4e7684ef6d"
+            "object_id": "tool://web_search/91005da9e4fa3b0c",
+            "digest": "270c22ca9b5d9b18"
           }
         },
         {
@@ -1858,7 +1866,7 @@
               "obs-00051"
             ],
             "metadata": {},
-            "result_summary": "I'll search for information about 'OpenClaw agent safety' for you. [Search results for 'OpenClaw agent safety'] 1. Result A 2. Result B The search returned resu…"
+            "result_summary": "I'll search for information about 'OpenClaw agent safety' for you. [Search results for 'OpenClaw agent safety'] 1. Result A 2. Result B The search returned mini…"
           }
         },
         {
@@ -2241,45 +2249,17 @@
           "obs-00035"
         ],
         "source_count": 1
-      },
-      {
-        "object_id": "memory://daily/2026-09-02",
-        "version": 1,
-        "kind": "write",
-        "turn": 16,
-        "source_node_ids": [
-          "obs-00021"
-        ],
-        "source_count": 1
-      },
-      {
-        "object_id": "file://workspace/MEMORY.md",
-        "version": 1,
-        "kind": "write",
-        "turn": 15,
-        "source_node_ids": [
-          "obs-00018"
-        ],
-        "source_count": 1
-      },
-      {
-        "object_id": "memory://daily/2026-09-01",
-        "version": 1,
-        "kind": "write",
-        "turn": 8,
-        "source_node_ids": [
-          "obs-00009"
-        ],
-        "source_count": 1
       }
     ],
     "state_budget": {
-      "max_states": 32,
+      "max_states": 2,
       "total_objects": 5,
-      "included_objects": 5,
-      "omitted_objects": 0,
-      "omitted_kinds": {},
-      "omitted_object_digest": null
+      "included_objects": 2,
+      "omitted_objects": 3,
+      "omitted_kinds": {
+        "write": 3
+      },
+      "omitted_object_digest": "a2d0dc71ad105eb1"
     },
     "effect_counts": {
       "read": 4,
@@ -2298,7 +2278,7 @@
         "tool": "write_file",
         "decision": "observe_only",
         "execution_status": "succeeded",
-        "arguments_digest": "44192e0488bf6e1b"
+        "arguments_digest": "47e3faa7bbadde69"
       },
       {
         "turn": 16,
@@ -2333,7 +2313,7 @@
         "tool": "web_search",
         "decision": "observe_only",
         "execution_status": "succeeded",
-        "arguments_digest": "b1b8313bd2af8b97"
+        "arguments_digest": "91005da9e4fa3b0c"
       },
       {
         "turn": 35,
@@ -2562,7 +2542,7 @@
         "label": "write_file()",
         "data": {
           "tool": "write_file",
-          "arguments_digest": "44192e0488bf6e1b",
+          "arguments_digest": "47e3faa7bbadde69",
           "decision": "observe_only",
           "reason": "passive trace capture",
           "execution_status": "succeeded"
@@ -2707,7 +2687,7 @@
           "source": "workspace_bootstrap",
           "integrity": "file",
           "object_id": "file://workspace/MEMORY.md",
-          "digest": "a380cee80e5c08bc"
+          "digest": "3a09b3727229b829"
         }
       },
       {
@@ -2733,7 +2713,7 @@
           "source": "tool_return",
           "integrity": "unknown",
           "object_id": "file://workspace/MEMORY.md",
-          "digest": "a380cee80e5c08bc"
+          "digest": "3a09b3727229b829"
         }
       },
       {
@@ -2849,7 +2829,7 @@
           "source": "workspace_bootstrap",
           "integrity": "file",
           "object_id": "file://workspace/MEMORY.md",
-          "digest": "a380cee80e5c08bc"
+          "digest": "3a09b3727229b829"
         }
       },
       {
@@ -2885,7 +2865,7 @@
         "label": "web_search()",
         "data": {
           "tool": "web_search",
-          "arguments_digest": "b1b8313bd2af8b97",
+          "arguments_digest": "91005da9e4fa3b0c",
           "decision": "observe_only",
           "reason": "passive trace capture",
           "execution_status": "succeeded"
@@ -2900,8 +2880,8 @@
           "kind": "observation",
           "source": "tool_return",
           "integrity": "unknown",
-          "object_id": "tool://web_search/b1b8313bd2af8b97",
-          "digest": "4d4dce4e7684ef6d"
+          "object_id": "tool://web_search/91005da9e4fa3b0c",
+          "digest": "270c22ca9b5d9b18"
         }
       },
       {
@@ -2966,10 +2946,10 @@
         "id": "x-eff-00050",
         "type": "entity",
         "turn": 34,
-        "label": "read:tool://web_search/b1b8313bd2af8b97",
+        "label": "read:tool://web_search/91005da9e4fa3b0c",
         "data": {
           "kind": "effect_target",
-          "target": "tool://web_search/b1b8313bd2af8b97",
+          "target": "tool://web_search/91005da9e4fa3b0c",
           "persistent": false
         }
       },
@@ -3186,7 +3166,7 @@
         "turn": 34,
         "data": {
           "effect_kind": "read",
-          "target_object": "tool://web_search/b1b8313bd2af8b97",
+          "target_object": "tool://web_search/91005da9e4fa3b0c",
           "persistent": false,
           "status": "succeeded"
         }
