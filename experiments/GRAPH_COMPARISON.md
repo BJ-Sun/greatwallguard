@@ -67,6 +67,8 @@ user task
 
 本轮代码修正了工具名中资源名导致的 Effect 误判（例如 `get_sent_emails` 现在归为 `read`），并补充了 URI 归一化、孤立返回、状态读取事件和兼容上游参数的测试；跨会话样本已按新分类器重跑。
 
+真实 Agent 的独立验证见 [REAL_AGENT_VALIDATION.md](REAL_AGENT_VALIDATION.md)：4 个共享 workspace 的正常会话实现了用户、工具动作、工具返回和工作区变更的 100% 捕获，并验证了 `MEMORY.md` 的跨会话加载。该实验也显示，当前摘要大小随持久对象数增长，需要后续引入对象聚合或 TTL，才能得到严格有界的表示。
+
 ## 文件位置
 
 - 正常长任务：`experiments/results/normal/normal_0050.json`、`normal_0150.json`、`normal_0300.json`

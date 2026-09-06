@@ -123,7 +123,12 @@ class AgentLabGraphRecorder:
                 node_id=node_id,
                 summary=f"load {name}",
                 payload=getattr(file_obj, "content", ""),
-                data={"source": "workspace_bootstrap", "file": name, "integrity": "file" if name == "MEMORY.md" else "system"},
+                data={
+                    "source": "workspace_bootstrap",
+                    "file": name,
+                    "integrity": "file" if name == "MEMORY.md" else "system",
+                    "session_id": self._session_for_env.get(env_key),
+                },
             )
             if previous_state_id:
                 self.runtime.trace.record(
