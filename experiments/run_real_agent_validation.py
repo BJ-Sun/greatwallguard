@@ -27,6 +27,7 @@ from greatwallguard.agentlab_recorder import AgentLabGraphRecorder, patch_agentl
 from greatwallguard.model import EffectType, NodeType
 from greatwallguard.metrics import summarize_runtime
 from greatwallguard.model import TaskScope
+from greatwallguard.content import ContentIndex
 
 
 THIS_DIR = Path(__file__).resolve().parent
@@ -147,6 +148,7 @@ def run(
     *,
     max_states: int = 32,
     recent_actions: int = 8,
+    capture_content: bool = False,
 ) -> dict[str, Any]:
     _load_env()
     VictimAgent, victim_model, Environment, WorkspaceState = _load_agentlab()
@@ -157,7 +159,8 @@ def run(
         allowed_effects=frozenset({EffectType.READ, EffectType.WRITE, EffectType.CREATE}),
         allowed_resources=("web://", "file://workspace/", "memory://"),
     )
-    recorder = AgentLabGraphRecorder(scope)
+    content_index = ContentIndex() if capture_content else None
+    recorder = AgentLabGraphRecorder(scope, content_index=content_index)
     envs: list[Any] = []
     per_session: list[dict[str, Any]] = []
 
@@ -231,6 +234,9 @@ def run(
         "minimal_graph": recorder.runtime.minimal_graph(),
     }
     _write_json(output_root / "real_normal_validation.json", payload)
+    if content_index is not None:
+        # Explicit opt-in: local benchmark data, separate from the graph.
+        _write_json(output_root / "content_evidence.json", content_index.export(include_raw=True))
     return payload
 
 
@@ -240,12 +246,15 @@ def main() -> None:
     parser.add_argument("--max-rounds", type=int, default=2)
     parser.add_argument("--max-states", type=int, default=32)
     parser.add_argument("--recent-actions", type=int, default=8)
+    parser.add_argument("--capture-content", action="store_true",
+                        help="Retain local benchmark source text separately for semantic evaluation")
     args = parser.parse_args()
     payload = run(
         args.output_root,
         max_rounds=args.max_rounds,
         max_states=args.max_states,
         recent_actions=args.recent_actions,
+        capture_content=args.capture_content,
     )
     print(json.dumps({"output": str(args.output_root / "real_normal_validation.json"), "metrics": payload["final_metrics"], "sessions": payload["sessions"]}, ensure_ascii=False, indent=2))
 

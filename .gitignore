@@ -8,4 +8,11 @@ build/
 artifacts/
 logs/
 experiments/results/index.json
+# Raw long-run traces can contain task/file contents and are intentionally kept
+# out of the source repository. Commit only explicitly selected summaries.
+experiments/graph_summary_*/
+experiments/longrun_*/
+experiments/two_axis_v1/
+experiments/evidence_v1/
+experiments/claude_longrun_session.jsonl
 .DS_Store

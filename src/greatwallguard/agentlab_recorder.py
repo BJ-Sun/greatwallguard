@@ -14,9 +14,10 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from typing import Any, Iterator
 
-from .graph import compact_summary, digest
+from .graph import EffectGraph, compact_summary, digest
+from .content import ContentIndex
 from .metrics import summarize_runtime
-from .model import Effect, EffectType, GraphEdge, GraphNode, NodeType
+from .model import Effect, EffectType, GraphEdge, GraphNode, NodeType, StateTransition
 from .runtime import GreatWallGuardRuntime
 from .trace import TraceEventType
 
@@ -28,13 +29,14 @@ def _text(value: Any) -> str:
 class AgentLabGraphRecorder:
     """Collect user/tool/background events into one cross-session graph."""
 
-    def __init__(self, scope) -> None:
-        self.runtime = GreatWallGuardRuntime(scope)
+    def __init__(self, scope, *, content_index: ContentIndex | None = None) -> None:
+        self.runtime = GreatWallGuardRuntime(scope, graph=EffectGraph(content_index=content_index))
         self._latest_observation: dict[int, str] = {}
         self._session_for_env: dict[int, int] = {}
         self._env_for_workspace: dict[int, int] = {}
         self._action_for_env: dict[int, tuple[str, str, Effect]] = {}
         self._context_snapshot_by_env: dict[int, str] = {}
+        self._model_boundary_by_env: dict[int, tuple[str, ...]] = {}
         self._session_counter = 0
         self._step = 0
         self.raw_payload_chars = 0
@@ -52,6 +54,7 @@ class AgentLabGraphRecorder:
     def begin_session(self, env: Any, user_message: str, *, phase: str = "unknown") -> str:
         """Record one user turn and bind subsequent tool calls for ``env``."""
         env_key = id(env)
+        self._model_boundary_by_env.pop(env_key, None)
         turn = self._turn()
         self._session_counter += 1
         session_id = self._session_counter
@@ -142,9 +145,48 @@ class AgentLabGraphRecorder:
             self._latest_observation[env_key] = node_id
             self.raw_payload_chars += len(_text(getattr(file_obj, "content", "")))
 
+    def record_model_boundary(self, env: Any, *, phase: str, payload: Any,
+                              call_id: str) -> str:
+        """Record observable model I/O without claiming internal dependence.
+
+        An input payload contains the actual messages and tool schemas; an
+        output payload contains the visible response. One context reference
+        avoids connecting every historical observation to every new action.
+        The full context remains in the optional evidence index, not graph text.
+        """
+        if phase not in {"input", "output"}:
+            raise ValueError("model phase must be input or output")
+        env_key = id(env)
+        turn = self._turn()
+        source = "model_input" if phase == "input" else "assistant_output"
+        node_id = self.graph.add_observation(
+            source, f"model {phase}", turn=turn, integrity="unknown",
+            object_id=f"model://{call_id}/{phase}", raw_payload=payload,
+        )
+        self.graph.node(node_id).data.update(
+            model_call_id=call_id, session_id=self._session_for_env.get(env_key))
+        self.runtime.trace.record(
+            TraceEventType.OBSERVATION, turn=turn, node_id=node_id,
+            summary=f"model {phase}", payload=payload,
+            data={"source": source, "model_call_id": call_id},
+        )
+        previous = self._model_boundary_by_env.get(env_key, ())
+        self._model_boundary_by_env[env_key] = (node_id,) if phase == "input" else (*previous[:1], node_id)
+        self._latest_observation[env_key] = node_id
+        self.raw_payload_chars += len(_text(payload))
+        return node_id
+
     def _source_ids(self, env: Any) -> tuple[str, ...]:
+        if id(env) in self._model_boundary_by_env:
+            return self._model_boundary_by_env[id(env)]
         node_id = self._latest_observation.get(id(env))
         return (node_id,) if node_id else ()
+
+    def _source_evidence(self, env: Any) -> dict[str, Any]:
+        if id(env) in self._model_boundary_by_env:
+            return {"basis": "observed", "method": "model_call_boundary",
+                    "meaning": "context_and_response_association_not_causal_use"}
+        return {"basis": "inferred", "method": "latest_observation_proxy"}
 
     @staticmethod
     def _target(tool: str, args: dict[str, Any], kind: EffectType) -> str:
@@ -211,24 +253,31 @@ class AgentLabGraphRecorder:
             operation=tool,
             persistent=kind is not EffectType.READ,
             reversible=kind not in {EffectType.DELETE, EffectType.SEND, EffectType.EXECUTE},
+            metadata={"extraction_evidence": {"basis": "inferred", "method": "tool_name_tokens_v1"},
+                      "source_evidence": {"basis": "inferred", "method": "latest_observation_proxy"}},
         )
 
-    def before_tool_call(self, env: Any, tool: str, args: dict[str, Any]) -> str:
+    def before_tool_call(self, env: Any, tool: str, args: dict[str, Any], *,
+                         call_id: str | None = None) -> str:
         """Record a proposed action before the original environment executes."""
         turn = self._turn()
         source_ids = self._source_ids(env)
-        action_id = self.graph.add_action(tool, args, turn=turn, observation_ids=source_ids)
+        action_id = self.graph.add_action(tool, args, turn=turn, observation_ids=source_ids,
+                                          source_evidence=self._source_evidence(env))
         # Malformed JSON tool arguments should not make passive telemetry
         # alter the original environment's exception/return path.  Keep the
         # raw value in the action digest and infer a conservative unknown
         # effect from a mapping wrapper.
         effect_args = args if isinstance(args, dict) else {"_raw_args": args}
         effect = self.infer_effect(tool, effect_args)
+        effect.metadata["source_evidence"] = self._source_evidence(env)
         effect.source_node_ids = source_ids
         effect.turn = turn
         effect.id = self.graph._new_id("eff")
         self.graph.add_effect(effect, action_id=action_id, turn=turn)
         action = self.graph.node(action_id)
+        if call_id is not None:
+            action.data["call_id"] = call_id
         action.data.update({"decision": "observe_only", "reason": "passive trace capture"})
         self.runtime.trace.record(
             TraceEventType.ACTION_PROPOSED,
@@ -259,6 +308,8 @@ class AgentLabGraphRecorder:
         *,
         injected: bool = False,
         success: bool = True,
+        transition: StateTransition | None = None,
+        read_fingerprint: str | None = None,
     ) -> str:
         env_key = id(env)
         pending = self._action_for_env.pop(env_key, None)
@@ -320,7 +371,10 @@ class AgentLabGraphRecorder:
             integrity="untrusted" if injected else "unknown",
             object_id=observation_object_id,
             raw_payload=result,
+            object_fingerprint=read_fingerprint,
         )
+        if action.data.get("call_id") is not None:
+            self.graph.node(node_id).data["call_id"] = action.data["call_id"]
         self.runtime.trace.record(
             TraceEventType.OBSERVATION,
             turn=effect.turn,
@@ -330,7 +384,7 @@ class AgentLabGraphRecorder:
             payload=result,
             data={"source": "tool_return", "tool": tool, "integrity": "untrusted" if injected else "unknown"},
         )
-        if previous_state_id:
+        if previous_state_id and self.graph.node(node_id).data.get("state_match") != "fingerprint_mismatch":
             self.runtime.trace.record(
                 TraceEventType.STATE_READ,
                 turn=effect.turn,
@@ -350,7 +404,9 @@ class AgentLabGraphRecorder:
             )
             # ``commit_effect`` marks even read effects as succeeded; it only
             # materializes a State node for persistent effects.
-            self.graph.commit_effect(effect_id, succeeded=True, result_summary=summary)
+            self.graph.commit_effect(effect_id, succeeded=True, result_summary=summary,
+                                     evidence={"basis": "reported", "method": "tool_return_status"},
+                                     transition=transition)
         else:
             self.runtime.trace.record(
                 TraceEventType.EFFECT_FAILED,
@@ -385,12 +441,17 @@ class AgentLabGraphRecorder:
         if not source_ids and self.sessions:
             source_ids = (self.sessions[-1]["user_node_id"],)
         turn = self._turn()
-        action_id = self.graph.add_action(operation, {"target": target}, turn=turn, observation_ids=source_ids)
+        source_evidence = {"basis": "inferred", "method": "latest_observation_proxy"}
+        action_id = self.graph.add_action(operation, {"target": target}, turn=turn,
+                                         observation_ids=source_ids, source_evidence=source_evidence)
         effect = Effect(kind, target, operation, persistent=True, reversible=True, source_node_ids=source_ids, turn=turn)
+        effect.metadata.update(source_evidence=source_evidence,
+                               extraction_evidence={"basis": "declared", "method": "background_adapter"})
         effect.id = self.graph._new_id("eff")
         self.graph.add_effect(effect, action_id=action_id, turn=turn)
         self.graph.node(action_id).data.update({"decision": "observe_only", "execution_status": "succeeded"})
-        self.graph.commit_effect(effect.id, succeeded=True, result_summary=summary)
+        self.graph.commit_effect(effect.id, succeeded=True, result_summary=summary,
+                                 evidence={"basis": "reported", "method": "background_hook_return"})
         self.runtime.trace.record(
             TraceEventType.ACTION_PROPOSED,
             turn=turn,

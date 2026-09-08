@@ -1,8 +1,7 @@
-"""Append-only compressed state graph.
+"""Evidence-labelled event/state graph and separate budgeted projections.
 
-The graph stores summaries and digests instead of raw prompts or tool
-payloads.  This keeps the cross-turn object small while retaining the causal
-links needed by authorization and auditing.
+The audit graph grows with execution. Optional content references point to an
+independent evidence index. Associations are not automatically causal claims.
 """
 
 from __future__ import annotations
@@ -14,7 +13,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .model import EdgeType, Effect, GraphEdge, GraphNode, NodeType
+from .model import EdgeType, Effect, GraphEdge, GraphNode, NodeType, StateTransition
+from .content import ContentIndex
 
 
 def digest(value: Any) -> str:
@@ -31,7 +31,8 @@ def compact_summary(value: Any, limit: int = 160) -> str:
 class EffectGraph:
     """A small, serializable graph of agent behavior and persistent effects."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, content_index: ContentIndex | None = None) -> None:
+        self.content_index = content_index
         self.nodes: dict[str, GraphNode] = {}
         self.edges: list[GraphEdge] = []
         self.state_versions: dict[str, int] = {}
@@ -48,13 +49,16 @@ class EffectGraph:
         self.nodes[node.id] = node
         previous = self._last_node_by_turn.get(node.turn)
         if previous:
-            self.edges.append(GraphEdge(previous, node.id, EdgeType.NEXT, node.turn))
+            self.edges.append(GraphEdge(previous, node.id, EdgeType.NEXT, node.turn,
+                                        {"basis": "observed", "method": "insertion_order_within_step"}))
         self._last_node_by_turn[node.turn] = node.id
         return node.id
 
-    def _edge(self, source: str, target: str, edge_type: EdgeType, turn: int) -> None:
+    def _edge(self, source: str, target: str, edge_type: EdgeType, turn: int,
+              *, evidence: dict[str, Any] | None = None) -> None:
         if source in self.nodes and target in self.nodes:
-            self.edges.append(GraphEdge(source, target, edge_type, turn))
+            self.edges.append(GraphEdge(source, target, edge_type, turn,
+                                        evidence or {"basis": "unspecified", "method": "caller"}))
 
     def add_observation(
         self,
@@ -65,6 +69,7 @@ class EffectGraph:
         integrity: str = "unknown",
         object_id: str | None = None,
         raw_payload: Any = None,
+        object_fingerprint: str | None = None,
     ) -> str:
         node_id = self._new_id("obs")
         node = GraphNode(
@@ -79,12 +84,23 @@ class EffectGraph:
                 "digest": digest(raw_payload if raw_payload is not None else summary),
             },
         )
+        if self.content_index is not None and raw_payload is not None:
+            node.data["content"] = self.content_index.capture(raw_payload)
         node_id = self._add_node(node)
         # A later observation of a persistent object explicitly points back
         # to its latest committed version.  This is the first cross-turn edge
         # in the graph; raw conversation history is not needed to recover it.
         if object_id and object_id in self._latest_state_node:
-            self._edge(self._latest_state_node[object_id], node_id, EdgeType.READS, turn)
+            previous = self.nodes[self._latest_state_node[object_id]]
+            recorded_fingerprint = previous.data.get("fingerprint")
+            comparable = object_fingerprint is not None and recorded_fingerprint is not None
+            if comparable and object_fingerprint != recorded_fingerprint:
+                node.data["state_match"] = "fingerprint_mismatch"
+            else:
+                self._edge(previous.id, node_id, EdgeType.READS, turn,
+                           evidence={"basis": "observed" if comparable else "inferred",
+                                     "method": "object_and_fingerprint_match" if comparable else "latest_object_id_match",
+                                     "version_verified": comparable})
         return node_id
 
     def add_action(
@@ -94,6 +110,7 @@ class EffectGraph:
         *,
         turn: int = 0,
         observation_ids: Iterable[str] = (),
+        source_evidence: dict[str, Any] | None = None,
     ) -> str:
         node_id = self._new_id("act")
         node = GraphNode(
@@ -103,9 +120,12 @@ class EffectGraph:
             f"{tool}()",
             {"tool": tool, "arguments_digest": digest(arguments)},
         )
+        if self.content_index is not None:
+            node.data["content"] = self.content_index.capture(arguments)
         self._add_node(node)
         for observation_id in observation_ids:
-            self._edge(observation_id, node_id, EdgeType.DERIVED_FROM, turn)
+            self._edge(observation_id, node_id, EdgeType.DERIVED_FROM, turn,
+                       evidence=source_evidence)
         return node_id
 
     def add_effect(self, effect: Effect, *, action_id: str, turn: int | None = None) -> str:
@@ -129,9 +149,11 @@ class EffectGraph:
             },
         )
         self._add_node(node)
-        self._edge(action_id, effect_id, EdgeType.CAUSES, effect.turn)
+        self._edge(action_id, effect_id, EdgeType.CAUSES, effect.turn,
+                   evidence=effect.metadata.get("extraction_evidence"))
         for source_id in effect.source_node_ids:
-            self._edge(source_id, effect_id, EdgeType.DERIVED_FROM, effect.turn)
+            self._edge(source_id, effect_id, EdgeType.DERIVED_FROM, effect.turn,
+                       evidence=effect.metadata.get("source_evidence"))
         return effect_id
 
     def commit_effect(
@@ -140,13 +162,29 @@ class EffectGraph:
         *,
         succeeded: bool,
         result_summary: str | None = None,
+        evidence: dict[str, Any] | None = None,
+        transition: StateTransition | None = None,
     ) -> str | None:
-        """Mark an authorized effect and materialize its state only on success."""
+        """Record a result; observed unchanged content creates no new version.
+
+        Without a transition, retain the legacy reported-version behavior and
+        its weaker evidence label. Fingerprint scope comes from the adapter.
+        """
         effect_node = self.nodes[effect_id]
+        if transition is not None and transition.object_id != effect_node.data["target"]:
+            raise ValueError("State evidence belongs to a different object")
+        commit_evidence = evidence or {"basis": "reported", "method": "caller_success_flag"}
+        if transition is not None:
+            commit_evidence = {"basis": "observed", "method": transition.method,
+                               "before": transition.before, "after": transition.after}
+            effect_node.data["state_changed"] = transition.before != transition.after
+        effect_node.data["commit_evidence"] = commit_evidence
         effect_node.data["status"] = "succeeded" if succeeded else "failed"
         if result_summary is not None:
             effect_node.data["result_summary"] = compact_summary(result_summary)
         if not succeeded or not effect_node.data.get("persistent"):
+            return None
+        if transition is not None and transition.before == transition.after:
             return None
         if effect_id in self._effect_state_node:
             return self._effect_state_node[effect_id]
@@ -167,10 +205,12 @@ class EffectGraph:
                 "effect_id": effect_id,
                 "kind": effect_node.data["kind"],
                 "status": "committed",
+                "evidence": commit_evidence,
+                **({"fingerprint": transition.after} if transition is not None else {}),
             },
         )
         self._add_node(state)
-        self._edge(effect_id, state_id, EdgeType.UPDATES, turn)
+        self._edge(effect_id, state_id, EdgeType.UPDATES, turn, evidence=commit_evidence)
         self._latest_state_node[target] = state_id
         self._effect_state_node[effect_id] = state_id
         return state_id
@@ -312,6 +352,7 @@ class EffectGraph:
                                     else "data"
                                 ),
                                 "integrity": source_node.data.get("integrity") if source_node else "unknown",
+                                "evidence": edge.evidence,
                             },
                         })
             elif edge.edge_type is EdgeType.CAUSES:
@@ -328,6 +369,7 @@ class EffectGraph:
                             "target_object": effect.data.get("target"),
                             "persistent": effect.data.get("persistent", False),
                             "status": effect.data.get("status"),
+                            "evidence": edge.evidence,
                         },
                     })
             elif edge.edge_type is EdgeType.READS:
@@ -339,7 +381,8 @@ class EffectGraph:
                             "target": follow.target,
                             "relation": "consume",
                             "turn": edge.turn,
-                            "data": {"role": "state", "activation": True},
+                            "data": {"role": "state", "activation": True,
+                                     "evidence_chain": [edge.evidence, follow.evidence]},
                         })
             elif edge.edge_type is EdgeType.NEXT:
                 if edge.source in self.nodes and edge.target in self.nodes and self.nodes[edge.source].node_type is NodeType.ACTION and self.nodes[edge.target].node_type is NodeType.ACTION:
@@ -348,7 +391,7 @@ class EffectGraph:
                         "target": edge.target,
                         "relation": "precede",
                         "turn": edge.turn,
-                        "data": {},
+                        "data": {"evidence": edge.evidence},
                     })
 
         if task_scope is not None:

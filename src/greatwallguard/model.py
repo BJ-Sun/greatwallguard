@@ -87,6 +87,19 @@ class Effect:
     turn: int = 0
 
 
+@dataclass(frozen=True)
+class StateTransition:
+    """Observed object fingerprints; None denotes an absent object.
+
+    Fingerprint scope must be explicit, e.g. file content excludes mtime/perms.
+    A successful operation with equal fingerprints does not create a version.
+    """
+    object_id: str
+    before: str | None
+    after: str | None
+    method: str = "file_content_sha256"
+
+
 @dataclass
 class GraphNode:
     id: str
@@ -102,6 +115,8 @@ class GraphEdge:
     target: str
     edge_type: EdgeType
     turn: int
+    # A relationship's existence is distinct from the evidence supporting it.
+    evidence: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -110,4 +125,3 @@ class Decision:
     reason: str
     effect_ids: tuple[str, ...] = ()
     action_id: str | None = None
-
