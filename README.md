@@ -57,7 +57,7 @@ GreatWallGuard 当前研究重点是：对 Agent 长程活动进行中立、可�
 
 摘要支持 `small` / `medium` / `large` 三档预算，并保证整个 `content_sketch`（含元数据）不超过其字节预算。内容摘要默认使用确定性的原文片段兜底；可选 LLM 模式要求每个命题引用可验证的原文片段，拒绝无据声明，失败记为 `unknown`。LLM 原始响应按语料摘要缓存，因此可从保存的审计图回放摘要而不再调用 API。
 
-限制：有界摘要会丢失窗口外的旧事件；当前摘要不是攻击检测器，也不对内容做良性 / 恶意分类。结果见 `experiments/graph_summary_20260907/SUMMARY.md`，实现方案见 `experiments/GRAPH_SUMMARY_PLAN.md`。
+限制：有界摘要会丢失窗口外的旧事件；当前摘要不是攻击检测器，也不对内容做良性 / 恶意分类。公开结果见 [图状态摘要公开实验摘要](docs/GRAPH_SUMMARY_RESULTS.md)，实现方案见 `experiments/GRAPH_SUMMARY_PLAN.md`。
 
 ## 最小流转
 

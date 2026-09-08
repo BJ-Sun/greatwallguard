@@ -10,7 +10,7 @@
 
 ## B. 读取实验结论
 
-4. [图状态摘要实验结果](../experiments/graph_summary_20260907/SUMMARY.md) —— 真实长时任务的压缩与覆盖率结果。
+4. [图状态摘要公开实验结果](GRAPH_SUMMARY_RESULTS.md) —— 真实长时任务的聚合压缩与覆盖率结果。
 5. [图状态摘要实验计划](../experiments/GRAPH_SUMMARY_PLAN.md) —— 实验设置、指标和预算。
 6. [过程与内容双维度验证](../experiments/TWO_AXIS_VALIDATION.md) —— 早期正常任务验证。
 

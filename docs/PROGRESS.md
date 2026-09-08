@@ -49,7 +49,7 @@
 当前测试套件共 51 项，全部通过。实验计划、结果摘要和实现分别见：
 
 - [图设计说明](GRAPH_DESIGN.md)
-- [图状态摘要实验结果](../experiments/graph_summary_20260907/SUMMARY.md)
+- [图状态摘要公开实验结果](GRAPH_SUMMARY_RESULTS.md)
 - [图状态摘要实验计划](../experiments/GRAPH_SUMMARY_PLAN.md)
 
 ## 尚未完成
