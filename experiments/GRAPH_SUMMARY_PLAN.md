@@ -39,7 +39,7 @@ classification.
 New module: `src/greatwallguard/state_summary.py`. It reads the **saved** audit
 record (the `trace_dict()` envelope: `graph` nodes/edges/state_versions plus the
 `events` trace) and the content index raw texts, and emits a serializable summary
-with three bounded components:
+with four bounded components:
 
 1. `recent_trace` — the exact most recent process events and their IDs (a count
    bound; event records are copied verbatim, never reworded or merged).
@@ -48,7 +48,10 @@ with three bounded components:
    and evidence references (state node id, effect id, commit evidence basis/method,
    source node ids). Older versions and over-budget objects are represented by
    counts and a digest of omitted object ids.
-3. `content_sketch` — task-relevant facts, constraints, conditions, revisions and
+3. `effect_process_ledger` — persistent Effects joined to their producing
+   action/call, argument digest, source integrity, result evidence and State
+   version. Failed persistent attempts without a State are retained.
+4. `content_sketch` — task-relevant facts, constraints, conditions, revisions and
    retractions with evidence references, not raw full documents. Two modes:
    - **LLM mode** (optional): an explicit prompt + output schema; every
      proposition must cite a source record id and a verbatim-unique quote span.
@@ -60,7 +63,8 @@ with three bounded components:
      exactly like `extractive.py`.
 
 Configurable budget: `max_events` (recent trace), `max_ledger_objects` +
-`max_sources_per_object` (ledger), `sketch_budget_bytes` (content sketch). Three
+`max_sources_per_object` (ledger), `max_process_ledger_entries` (process ledger),
+`sketch_budget_bytes` (content sketch). Three
 preset levels are used for the comparison matrix:
 
 | level | max_events | max_ledger_objects | max_sources | sketch bytes |

@@ -15,4 +15,6 @@ experiments/longrun_*/
 experiments/two_axis_v1/
 experiments/evidence_v1/
 experiments/claude_longrun_session.jsonl
+experiments/*_live/
+experiments/*_graph/
 .DS_Store

@@ -28,6 +28,7 @@ from greatwallguard.model import EffectType, NodeType
 from greatwallguard.metrics import summarize_runtime
 from greatwallguard.model import TaskScope
 from greatwallguard.content import ContentIndex
+from greatwallguard.multi_level_graph import build_multi_level_graph
 
 
 THIS_DIR = Path(__file__).resolve().parent
@@ -232,6 +233,16 @@ def run(
             recent_actions=recent_actions,
         ),
         "minimal_graph": recorder.runtime.minimal_graph(),
+    }
+    # Materialize all graph levels from the same real execution.  L0 remains
+    # the audit source; the upper levels are projections with L0 traceability.
+    payload["multi_level_graph"] = build_multi_level_graph(payload["graph"])
+    final_metrics["multi_level_graph"] = {
+        "bytes": payload["multi_level_graph"]["meta"]["bytes"],
+        "compression_ratio": payload["multi_level_graph"]["meta"]["compression_ratio"],
+        "l2_objects": payload["multi_level_graph"]["levels"]["l2"]["object_count"],
+        "l2_activations": payload["multi_level_graph"]["levels"]["l2"]["activation_count"],
+        "l3_alerts": payload["multi_level_graph"]["meta"]["l3_alerts"],
     }
     _write_json(output_root / "real_normal_validation.json", payload)
     if content_index is not None:

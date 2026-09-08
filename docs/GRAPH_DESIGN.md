@@ -6,6 +6,11 @@ GreatWallGuard 的图不是攻击分类器，也不是黑名单或白名单。�
 
 > 用稳定、可回查、可压缩的结构，记录 Agent 在多轮执行中看到了什么、做了什么，以及留下了哪些持久影响。
 
+图采用“底层全量、上层逐级抽象”的原则：底层完整审计图保留观测边界内的事件
+和证据，上层通过工具无关的归一化、对象聚合和预算化投影逐级压缩。各级保留对
+下一级事件的回指，不为具体工具或任务增加基础节点。分层细节见
+[多级图设计](MULTI_LEVEL_GRAPH.md)。
+
 攻击检测、权限判断和异常分析都在图之上运行。这样可以避免把某一种攻击假设硬编码进基础表征。
 
 ## 2. 统一流转
@@ -83,7 +88,7 @@ method = hook / tool_contract / snapshot / adapter / rule / ...
 
 ## 6. 有界运行时摘要
 
-完整图用于审计，运行时使用三个有界组件：
+完整图用于审计，运行时使用四个有界组件：
 
 ```text
 recent_trace
@@ -92,17 +97,23 @@ recent_trace
 effect_ledger
     每个活跃对象的最新 State 版本、指纹、Effect 类型和证据引用
 
+effect_process_ledger
+    每个持久 Effect 的 action/call、参数摘要、来源完整性、结果证据和 State 版本
+
 content_sketch
     任务事实、约束、条件、修订和撤回的带证据摘要
 ```
 
-当前摘要能稳定保留持久状态，但历史 `call_id` 和返回证据会随窗口缩小而衰减。因此下一步拟增加与 `effect_ledger` 并列的 `effect_process_ledger`：
+当前摘要能稳定保留持久状态，但历史 `call_id` 和返回证据会随窗口缩小而衰减。
+`effect_process_ledger` 现在作为与 `effect_ledger` 并列的有界过程投影：
 
 ```text
 持久 Effect → 产生它的 call_id → 参数摘要 → 返回证据 → State 版本
 ```
 
-这不是新的图节点类型，而是同一张图的另一种有界投影。
+实现入口：[effect_process_ledger.py](../src/greatwallguard/effect_process_ledger.py)。
+它保留失败但未产生 State 的持久 Effect，并对缺少 `call_id` 的旧轨迹显式计数；
+这不是新的图节点类型。
 
 ## 7. 当前边界
 

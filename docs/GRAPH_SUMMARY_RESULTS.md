@@ -35,5 +35,8 @@
 
 - `effect_ledger` 已经能稳定保存“当前留下了什么影响”。
 - `recent_trace` 不能保存全部历史调用，因此不能单独承担长期过程审计。
-- 下一步应增加 `effect_process_ledger`，将持久 Effect 连接到产生它的调用、参数摘要和返回证据。
+- `effect_process_ledger` 已作为第四个有界组件实现；它补充持久 Effect 到产生它的
+  action/call、参数摘要、来源完整性、返回证据和 State 版本的过程召回。
+- 该账本不解决字段级值流、多目标 Effect 或跨会话激活证明；这些缺口及攻击样例
+  审计见 [图覆盖审计](GRAPH_GAP_AUDIT.md)。
 - 以上是表征实验，不是攻击检测结果；攻击检测率和误报率需要在攻击数据集上重新评估。

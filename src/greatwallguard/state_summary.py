@@ -1,10 +1,12 @@
 """Bounded graph-state summary: a runtime view of the frozen audit graph.
 
-Three bounded components over the same O/A/E/S graph and content index:
+Four bounded components over the same O/A/E/S graph and content index:
 
 * ``recent_trace``  — the exact most recent process events and their IDs;
 * ``effect_ledger`` — deduplicated live persistent states/effects with
   version/hash and evidence references;
+* ``effect_process_ledger`` — persistent Effects joined to their producing
+  action/call, source integrity, result evidence and State version;
 * ``content_sketch`` — task-relevant facts, constraints, conditions and
   revisions with evidence references, never raw full documents.
 
@@ -30,6 +32,7 @@ from typing import Any, Callable
 
 from .content import json_bytes
 from .extractive import paragraph_units
+from .effect_process_ledger import build_effect_process_ledger
 from .graph import digest
 
 SCHEMA = "gwg-state-summary-v1"
@@ -46,7 +49,7 @@ PROPOSITION_KINDS = {"fact", "constraint", "condition", "revision", "retraction"
 
 @dataclass(frozen=True)
 class SummaryBudgets:
-    """Count/byte bounds for the three components of one summary.
+    """Count/byte bounds for the four components of one summary.
 
     ``recent_trace`` and ``effect_ledger`` are count-bounded; ``content_sketch``
     is byte-bounded. ``max_event_chars`` bounds each retained process event's
@@ -57,6 +60,7 @@ class SummaryBudgets:
     max_events: int = 12
     max_ledger_objects: int = 16
     max_sources_per_object: int = 4
+    max_process_ledger_entries: int = 16
     sketch_budget_bytes: int = 4096
     max_event_chars: int = 2048
 
@@ -65,10 +69,13 @@ class SummaryBudgets:
 
 
 SMALL = SummaryBudgets(max_events=6, max_ledger_objects=8, max_sources_per_object=3,
+                       max_process_ledger_entries=8,
                        sketch_budget_bytes=1024, max_event_chars=512)
 MEDIUM = SummaryBudgets(max_events=12, max_ledger_objects=16, max_sources_per_object=4,
+                        max_process_ledger_entries=16,
                         sketch_budget_bytes=4096, max_event_chars=2048)
 LARGE = SummaryBudgets(max_events=20, max_ledger_objects=32, max_sources_per_object=6,
+                       max_process_ledger_entries=32,
                        sketch_budget_bytes=16384, max_event_chars=8192)
 
 BUDGETS = {"small": SMALL, "medium": MEDIUM, "large": LARGE}
@@ -217,6 +224,8 @@ class GraphStateSummarizer:
                  response_cache: dict[str, str] | None = None) -> None:
         if budgets.max_events < 0 or budgets.max_ledger_objects < 0 or budgets.max_sources_per_object < 0:
             raise ValueError("summary budgets must be non-negative")
+        if budgets.max_process_ledger_entries < 0:
+            raise ValueError("summary budgets must be non-negative")
         if budgets.sketch_budget_bytes < 0 or budgets.max_event_chars < 0:
             raise ValueError("summary budgets must be non-negative")
         self.budgets = budgets
@@ -298,6 +307,11 @@ class GraphStateSummarizer:
             "omitted_kinds": dict(Counter(r["kind"] for r in omitted)),
             "omitted_object_digest": digest([r["object_id"] for r in omitted]) if omitted else None,
         }
+
+    def _effect_process_ledger(self, graph: dict[str, Any]) -> dict[str, Any]:
+        """Keep the producing call beside each live/process Effect."""
+        return build_effect_process_ledger(
+            graph, max_entries=self.budgets.max_process_ledger_entries)
 
     # -- content_sketch -----------------------------------------------------
 
@@ -519,6 +533,7 @@ class GraphStateSummarizer:
             "budgets": self.budgets.as_dict(),
             "recent_trace": self._recent_trace(graph, events, raw_texts),
             "effect_ledger": self._effect_ledger(graph),
+            "effect_process_ledger": self._effect_process_ledger(graph),
             "content_sketch": sketch,
         }
         summary_bytes = len(json_bytes(summary))

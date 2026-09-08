@@ -44,6 +44,7 @@ class AgentLabTraceAdapter:
         arguments: dict[str, Any],
         *,
         source_node_ids: Iterable[str] = (),
+        call_id: str | None = None,
         execute=None,
     ):
         """Return the gate decision; call ``execute`` only when allowed."""
@@ -53,6 +54,6 @@ class AgentLabTraceAdapter:
             tool,
             arguments,
             source_node_ids=source_node_ids,
+            call_id=call_id,
             execute=execute,
         )
-

@@ -13,6 +13,12 @@
 4. [图状态摘要公开实验结果](GRAPH_SUMMARY_RESULTS.md) —— 真实长时任务的聚合压缩与覆盖率结果。
 5. [图状态摘要实验计划](../experiments/GRAPH_SUMMARY_PLAN.md) —— 实验设置、指标和预算。
 6. [过程与内容双维度验证](../experiments/TWO_AXIS_VALIDATION.md) —— 早期正常任务验证。
+7. [攻击样例标注表](ATTACK_ANNOTATIONS.md) —— 29 条已有样例的入口—Action—Effect—State—成功条件标注。
+8. [图覆盖审计](GRAPH_GAP_AUDIT.md) —— 当前图的最小缺口集合。
+9. [图检测基线](GRAPH_DETECTION_BASELINE.md) —— 第一版结构信号与评估协议。
+10. [多级图设计与实验验证报告](MULTI_LEVEL_GRAPH_REPORT.md) —— 全量审计图到运行时压缩图的统一分层、实现和真实 Agent 验证结果。
+    另见 [多级图设计细则](MULTI_LEVEL_GRAPH.md)。
+11. [AgentDojo 样例记录与检测协议](AGENTDOJO_CASE_PROTOCOL.md) —— 原始 case、图派生视图和检测评估的统一记录规范。
 
 ## C. 下一阶段研究问题
 
@@ -51,13 +57,13 @@
 ### C4. 下一步实现优先级
 
 ```text
-攻击样例整理
+攻击样例整理（29 条 v0 标注）
     ↓
-图覆盖审计
+图覆盖审计（M1–M5）
     ↓
-effect_process_ledger
+effect_process_ledger（已实现）
     ↓
-规则 / 轻量模型检测基线
+规则 / 轻量模型检测基线（已实现第一版）
     ↓
 压缩后检测性能评估
     ↓

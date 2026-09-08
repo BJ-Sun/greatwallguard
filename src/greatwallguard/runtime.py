@@ -80,11 +80,14 @@ class GreatWallGuardRuntime:
         *,
         source_node_ids: Iterable[str] = (),
         turn: int | None = None,
+        call_id: str | None = None,
         execute: Callable[[], Any] | None = None,
     ) -> tuple[Decision, Any | None]:
         current_turn = self.turn if turn is None else turn
         source_node_ids = tuple(source_node_ids)
-        action_id = self.graph.add_action(tool, arguments, turn=current_turn, observation_ids=source_node_ids)
+        action_id = self.graph.add_action(
+            tool, arguments, turn=current_turn, observation_ids=source_node_ids,
+            call_id=call_id)
         self.trace.record(
             TraceEventType.ACTION_PROPOSED,
             turn=current_turn,
@@ -92,7 +95,7 @@ class GreatWallGuardRuntime:
             related_ids=source_node_ids,
             summary=f"{tool}()",
             payload=arguments,
-            data={"tool": tool},
+            data={"tool": tool, **({"call_id": call_id} if call_id is not None else {})},
         )
         effects = self.contracts.infer(tool, arguments)
         for effect in effects:

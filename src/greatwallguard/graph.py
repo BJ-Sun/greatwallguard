@@ -111,6 +111,7 @@ class EffectGraph:
         turn: int = 0,
         observation_ids: Iterable[str] = (),
         source_evidence: dict[str, Any] | None = None,
+        call_id: str | None = None,
     ) -> str:
         node_id = self._new_id("act")
         node = GraphNode(
@@ -118,7 +119,8 @@ class EffectGraph:
             NodeType.ACTION,
             turn,
             f"{tool}()",
-            {"tool": tool, "arguments_digest": digest(arguments)},
+            {"tool": tool, "arguments_digest": digest(arguments),
+             **({"call_id": call_id} if call_id is not None else {})},
         )
         if self.content_index is not None:
             node.data["content"] = self.content_index.capture(arguments)
