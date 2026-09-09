@@ -19,6 +19,7 @@
 10. [多级图设计与实验验证报告](MULTI_LEVEL_GRAPH_REPORT.md) —— 全量审计图到运行时压缩图的统一分层、实现和真实 Agent 验证结果。
     另见 [多级图设计细则](MULTI_LEVEL_GRAPH.md)。
 11. [AgentDojo 样例记录与检测协议](AGENTDOJO_CASE_PROTOCOL.md) —— 原始 case、图派生视图和检测评估的统一记录规范。
+12. [真实 OpenClaw 攻击数据生产计划](https://github.com/BJ-Sun/openclaw-agentlab/blob/real-openclaw-agentdojo/docs/REAL_ATTACK_DATASET_PLAN.md) —— seed 规模、变体、批次、产物和时间计划。
 
 ## C. 下一阶段研究问题
 

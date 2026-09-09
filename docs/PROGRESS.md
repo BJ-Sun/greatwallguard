@@ -1,6 +1,6 @@
 # GreatWallGuard 当前进展
 
-更新时间：2026-09-08
+更新时间：2026-09-09
 
 ## 一句话结论
 
@@ -106,11 +106,11 @@ Action、5 个持久 State、3 条跨轮激活链；工具 Action/返回捕获�
 
 ## 下一步
 
-1. 冻结图 v0，整理一批带成功 / 失败对照的真实攻击样例。
-2. 为每个样例标注攻击入口、关键 Action、持久 Effect、State 传播和成功条件。
-3. 在 AgentLAB recorder 中补 session/phase、字段级值流和外部副作用快照证据。
-4. 在完整图、固定窗口、`effect_ledger` 和含 process ledger 的摘要上执行检测比较。
-5. 以“检测性能损失—压缩比例—误报率—证据完整度”联合评估图摘要。
+1. 按真实 OpenClaw-in-the-loop 计划，从 v1.1 的 629 个 seed 组合中分批生成 3–5 个攻击变体。
+2. 为每个 seed family 保留正常对照，并在批次层面补齐 attack/task 的 2×2 标签。
+3. 以 Strict ASR 为 AgentDojo 可比主指标，同时增加基于 Effect 和任务偏离的 Semantic ASR。
+4. 只用黑盒可见 I/O 生成图；用 `effect_process_ledger` 连接来源、Action、Effect、State 和 benign 对照。
+5. 在 10/30/50/100 轮档位上逐级筛选，最后比较图检测性能、压缩比例、误报率和证据完整度。
 
 ## 安全与数据边界
 
