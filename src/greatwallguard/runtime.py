@@ -7,7 +7,7 @@ from typing import Any, Callable, Iterable
 from .authorizer import EffectAuthorizer
 from .contracts import ToolContractRegistry
 from .graph import EffectGraph
-from .model import Decision, DecisionKind, Effect
+from .model import Decision, DecisionKind, Effect, EffectType, StateTransition
 from .trace import TraceEventType, TraceRecorder
 
 
@@ -44,6 +44,7 @@ class GreatWallGuardRuntime:
         integrity: str = "unknown",
         turn: int | None = None,
         object_id: str | None = None,
+        object_fingerprint: str | None = None,
         raw_payload: Any = None,
     ) -> str:
         node_id = self.graph.add_observation(
@@ -53,6 +54,7 @@ class GreatWallGuardRuntime:
             integrity=integrity,
             object_id=object_id,
             raw_payload=raw_payload,
+            object_fingerprint=object_fingerprint,
         )
         self.trace.record(
             TraceEventType.OBSERVATION,
@@ -164,6 +166,137 @@ class GreatWallGuardRuntime:
             object_id=f"tool://{tool}",
             raw_payload=raw_payload,
         )
+
+    def observe_workspace_read(
+        self,
+        *,
+        path: str,
+        fingerprint: str | None,
+        turn: int,
+        evidence_level: str = "observed",
+        evidence_method: str = "workspace_snapshot_or_runtime_context",
+        version: int | None = None,
+    ) -> str:
+        """Add a file read as an evidence-labelled observation.
+
+        Native OpenClaw filesystem arguments are not always present in the
+        headless JSON envelope.  Callers must therefore pass the evidence
+        level explicitly when a path was inferred from visible context.
+        """
+        return self.observe(
+            "workspace_read",
+            f"read workspace/{path}" + (f"@v{version}" if version is not None else ""),
+            integrity=evidence_level,
+            turn=turn,
+            object_id=f"workspace://{path}",
+            object_fingerprint=fingerprint,
+            raw_payload={
+                "path": path,
+                "sha256": fingerprint,
+                "version": version,
+                "evidence_method": evidence_method,
+            },
+        )
+
+    def record_workspace_change(self, event: dict[str, Any], *, call_id: str | None = None) -> str:
+        """Record a workspace write/create/delete and its version transition."""
+        operation = str(event.get("op", "update")).lower()
+        path = str(event.get("path", ""))
+        if not path:
+            raise ValueError("workspace change requires a path")
+        turn = int(event.get("turn", self.turn))
+        target = f"workspace://{path}"
+        kind = {
+            "create": EffectType.CREATE,
+            "update": EffectType.WRITE,
+            "write": EffectType.WRITE,
+            "replace": EffectType.WRITE,
+            "delete": EffectType.DELETE,
+        }.get(operation, EffectType.UNKNOWN)
+        observation_id = self.observe(
+            "workspace_state",
+            f"workspace/{path} before {operation}",
+            integrity=str(event.get("evidence_level", "observed")),
+            turn=turn,
+            object_id=target,
+            object_fingerprint=event.get("before_sha256"),
+            raw_payload={
+                "path": path,
+                "sha256": event.get("before_sha256"),
+                "version": max(int(event.get("version", 1)) - 1, 0),
+            },
+        )
+        action_id = self.graph.add_action(
+            f"workspace_{operation}",
+            {
+                "path": path,
+                "version": event.get("version"),
+                "before_sha256": event.get("before_sha256"),
+                "after_sha256": event.get("after_sha256"),
+            },
+            turn=turn,
+            observation_ids=(observation_id,),
+            call_id=call_id,
+        )
+        self.trace.record(
+            TraceEventType.ACTION_PROPOSED,
+            turn=turn,
+            node_id=action_id,
+            related_ids=(observation_id,),
+            summary=f"workspace_{operation}({path})",
+            payload=event,
+            data={"workspace": True, "path": path, "operation": operation},
+        )
+        effect = Effect(
+            kind=kind,
+            target=target,
+            operation=f"workspace_{operation}",
+            persistent=True,
+            reversible=kind is not EffectType.DELETE,
+            source_node_ids=(observation_id,),
+            metadata={
+                "workspace_path": path,
+                "version": event.get("version"),
+                "evidence_level": event.get("evidence_level", "observed"),
+                "evidence_method": event.get("evidence_method"),
+            },
+            turn=turn,
+        )
+        effect.id = self.graph._new_id("eff")
+        decision = self.authorizer.check((effect,), self.graph, action_id=action_id)
+        self.graph.node(action_id).data["decision"] = decision.kind.value
+        self.graph.node(action_id).data["reason"] = decision.reason
+        self.trace.record(
+            TraceEventType.AUTHORIZATION,
+            turn=turn,
+            node_id=action_id,
+            related_ids=(effect.id,),
+            summary=decision.reason,
+            data={"decision": decision.kind.value, "workspace": True},
+        )
+        if decision.kind is not DecisionKind.ALLOW:
+            return action_id
+        effect_id = self.graph.add_effect(effect, action_id=action_id, turn=turn)
+        state_id = self.graph.commit_effect(
+            effect_id,
+            succeeded=True,
+            result_summary=f"workspace {operation} {path}",
+            transition=StateTransition(
+                object_id=target,
+                before=event.get("before_sha256"),
+                after=event.get("after_sha256"),
+                method=event.get("evidence_method") or "workspace_snapshot_sha256",
+            ),
+        )
+        self.trace.record(
+            TraceEventType.EFFECT_COMMITTED,
+            turn=turn,
+            node_id=effect_id,
+            related_ids=tuple(value for value in (action_id, state_id) if value),
+            summary=f"workspace {operation}:{path}",
+            data={"workspace": True, "path": path, "state_id": state_id, "version": event.get("version")},
+        )
+        return action_id
 
     def trace_dict(self) -> dict[str, Any]:
         """Export the graph plus the event envelope used for coverage metrics."""

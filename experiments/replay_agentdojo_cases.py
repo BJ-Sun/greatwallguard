@@ -68,30 +68,64 @@ def replay_case(case: dict[str, Any]) -> dict[str, Any]:
     )
     runtime = GreatWallGuardRuntime(scope, contracts=_registry_for_tools(tools))
     previous = runtime.observe_user(str(case.get("benign_task", "")))
+    execution = case.get("execution") or {}
+    workspace_changes = execution.get("workspace_event_trace") or []
+    workspace_reads = execution.get("workspace_read_trace") or []
+    handled_workspace_turns: set[int] = set()
+
+    def replay_workspace_turn(turn: int) -> None:
+        nonlocal previous
+        if turn in handled_workspace_turns:
+            return
+        handled_workspace_turns.add(turn)
+        for event in workspace_changes:
+            if int(event.get("turn", 0)) == turn:
+                previous = runtime.record_workspace_change(
+                    event,
+                    call_id=f"{case.get('case_id', 'case')}-workspace-{turn}-{event.get('path')}",
+                )
+        for event in workspace_reads:
+            if int(event.get("turn", 0)) == turn:
+                previous = runtime.observe_workspace_read(
+                    path=str(event.get("path", "")),
+                    fingerprint=event.get("sha256"),
+                    turn=turn,
+                    evidence_level=str(event.get("evidence_level", "observed")),
+                    evidence_method=str(event.get("evidence_method", "workspace_runtime")),
+                    version=event.get("version_hint"),
+                )
+
+    trace_by_turn: dict[int, list[tuple[int, dict[str, Any]]]] = defaultdict(list)
     for index, item in enumerate(trace, start=1):
-        tool = str(item.get("tool", "unknown"))
-        arguments = item.get("arguments") or item.get("args") or {}
-        try:
-            runtime.before_tool_call(
-                tool,
-                arguments,
-                source_node_ids=(previous,),
-                turn=index,
-                call_id=str(item.get("call_id") or f"{case.get('case_id', 'case')}-{index}"),
-                execute=lambda item=item: _execute_recorded(item),
+        trace_by_turn[int(item.get("turn", index))].append((index, item))
+    all_turns = set(trace_by_turn)
+    all_turns.update(int(event.get("turn", 0)) for event in workspace_changes + workspace_reads)
+    for current_turn in sorted(turn for turn in all_turns if turn > 0):
+        for index, item in trace_by_turn.get(current_turn, []):
+            tool = str(item.get("tool", "unknown"))
+            arguments = item.get("arguments") or item.get("args") or {}
+            try:
+                runtime.before_tool_call(
+                    tool,
+                    arguments,
+                    source_node_ids=(previous,),
+                    turn=current_turn,
+                    call_id=str(item.get("call_id") or f"{case.get('case_id', 'case')}-{index}"),
+                    execute=lambda item=item: _execute_recorded(item),
+                )
+            except RuntimeError:
+                # The runtime records failed Effects and deliberately re-raises;
+                # continue replay so later events remain auditable.
+                pass
+            previous = runtime.observe(
+                "tool_return",
+                str(item.get("result", "")),
+                integrity="unknown",
+                turn=current_turn,
+                object_id=f"tool://{tool}",
+                raw_payload={"result": item.get("result"), "injected": bool(item.get("injected", False))},
             )
-        except RuntimeError:
-            # The runtime records failed Effects and deliberately re-raises;
-            # continue replay so later events remain auditable.
-            pass
-        previous = runtime.observe(
-            "tool_return",
-            str(item.get("result", "")),
-            integrity="unknown",
-            turn=index,
-            object_id=f"tool://{tool}",
-            raw_payload={"result": item.get("result"), "injected": bool(item.get("injected", False))},
-        )
+        replay_workspace_turn(current_turn)
     trace_record = runtime.trace_dict()
     levels = build_multi_level_graph(trace_record)
     run = case.get("run") or {}
