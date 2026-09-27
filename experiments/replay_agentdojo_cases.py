@@ -33,8 +33,13 @@ def _first(args: dict[str, Any]) -> str:
 
 def _effect_for_tool(tool: str, args: dict[str, Any]) -> Effect:
     """Use a generic verb classifier, not a per-tool graph schema."""
+    normalized = tool.lower()
     verb = tool.split("_", 1)[0].lower()
     target = f"tool://{tool}/{_first(args)}"
+    if "scheduler" in normalized and any(token in normalized for token in ("create", "update", "delete", "remove")):
+        return Effect(EffectType.WRITE, target, "scheduler_create", persistent=True)
+    if "scheduler" in normalized and any(token in normalized for token in ("advance", "trigger", "run")):
+        return Effect(EffectType.EXECUTE, target, "scheduler_execute", persistent=True, reversible=False)
     if verb in {"get", "search", "list", "read", "check", "fetch", "find", "query", "look"}:
         return Effect(EffectType.READ, target, tool, persistent=False)
     if verb in {"delete", "remove", "cancel"}:
