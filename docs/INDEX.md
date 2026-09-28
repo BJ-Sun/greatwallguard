@@ -4,22 +4,23 @@
 
 ## A. 先了解当前系统
 
-1. [图设计说明](GRAPH_DESIGN.md) —— 节点、边、证据、内容层和有界摘要。
-2. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
-3. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
+1. [图设计与当前进展总览](GRAPH_DESIGN_AND_CURRENT_PROGRESS.md) —— 面向读者的统一说明、实验结果和下一步。
+2. [图设计说明](GRAPH_DESIGN.md) —— 节点、边、证据、内容层和有界摘要。
+3. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
+4. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
 
 ## B. 读取实验结论
 
-4. [图状态摘要公开实验结果](GRAPH_SUMMARY_RESULTS.md) —— 真实长时任务的聚合压缩与覆盖率结果。
-5. [图状态摘要实验计划](../experiments/GRAPH_SUMMARY_PLAN.md) —— 实验设置、指标和预算。
-6. [过程与内容双维度验证](../experiments/TWO_AXIS_VALIDATION.md) —— 早期正常任务验证。
-7. [攻击样例标注表](ATTACK_ANNOTATIONS.md) —— 29 条已有样例的入口—Action—Effect—State—成功条件标注。
-8. [图覆盖审计](GRAPH_GAP_AUDIT.md) —— 当前图的最小缺口集合。
-9. [图检测基线](GRAPH_DETECTION_BASELINE.md) —— 第一版结构信号与评估协议。
-10. [多级图设计与实验验证报告](MULTI_LEVEL_GRAPH_REPORT.md) —— 全量审计图到运行时压缩图的统一分层、实现和真实 Agent 验证结果。
+5. [图状态摘要公开实验结果](GRAPH_SUMMARY_RESULTS.md) —— 真实长时任务的聚合压缩与覆盖率结果。
+6. [图状态摘要实验计划](../experiments/GRAPH_SUMMARY_PLAN.md) —— 实验设置、指标和预算。
+7. [过程与内容双维度验证](../experiments/TWO_AXIS_VALIDATION.md) —— 早期正常任务验证。
+8. [攻击样例标注表](ATTACK_ANNOTATIONS.md) —— 29 条已有样例的入口—Action—Effect—State—成功条件标注。
+9. [图覆盖审计](GRAPH_GAP_AUDIT.md) —— 当前图的最小缺口集合。
+10. [图检测基线](GRAPH_DETECTION_BASELINE.md) —— 第一版结构信号与评估协议。
+11. [多级图设计与实验验证报告](MULTI_LEVEL_GRAPH_REPORT.md) —— 全量审计图到运行时压缩图的统一分层、实现和真实 Agent 验证结果。
     另见 [多级图设计细则](MULTI_LEVEL_GRAPH.md)。
-11. [AgentDojo 样例记录与检测协议](AGENTDOJO_CASE_PROTOCOL.md) —— 原始 case、图派生视图和检测评估的统一记录规范。
-12. [真实 OpenClaw 攻击数据生产计划](https://github.com/BJ-Sun/openclaw-agentlab/blob/real-openclaw-agentdojo/docs/REAL_ATTACK_DATASET_PLAN.md) —— seed 规模、变体、批次、产物和时间计划。
+12. [AgentDojo 样例记录与检测协议](AGENTDOJO_CASE_PROTOCOL.md) —— 原始 case、图派生视图和检测评估的统一记录规范。
+13. [真实 OpenClaw 攻击数据生产计划](https://github.com/BJ-Sun/openclaw-agentlab/blob/real-openclaw-agentdojo/docs/REAL_ATTACK_DATASET_PLAN.md) —— seed 规模、变体、批次、产物和时间计划。
 
 ## C. 下一阶段研究问题
 
