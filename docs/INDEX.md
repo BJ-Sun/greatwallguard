@@ -4,10 +4,11 @@
 
 ## A. 先了解当前系统
 
-1. [图设计与当前进展总览](GRAPH_DESIGN_AND_CURRENT_PROGRESS.md) —— 面向读者的统一说明、实验结果和下一步。
-2. [图设计说明](GRAPH_DESIGN.md) —— 节点、边、证据、内容层和有界摘要。
-3. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
-4. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
+1. [研究动机与核心洞见](MOTIVATION.md) —— 问题定义、相关工作边界和 key insight。
+2. [图设计与当前进展总览](GRAPH_DESIGN_AND_CURRENT_PROGRESS.md) —— 面向读者的统一说明、实验结果和下一步。
+3. [图设计说明](GRAPH_DESIGN.md) —— 节点、边、证据、内容层和有界摘要。
+4. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
+5. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
 
 ## B. 读取实验结论
 
