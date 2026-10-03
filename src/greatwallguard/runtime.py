@@ -300,14 +300,9 @@ class GreatWallGuardRuntime:
 
     def trace_dict(self) -> dict[str, Any]:
         """Export the graph plus the event envelope used for coverage metrics."""
+        scope = self.scope.as_dict()
         return {
-            "task_scope": {
-                "task_id": self.scope.task_id,
-                "intent": self.scope.intent,
-                "allowed_effects": sorted(effect.value for effect in self.scope.allowed_effects),
-                "allowed_resources": list(self.scope.allowed_resources),
-                "allowed_destinations": list(self.scope.allowed_destinations),
-            },
+            "task_scope": scope,
             "events": self.trace.to_dict(),
             "graph": self.graph.to_dict(),
         }
@@ -321,11 +316,7 @@ class GreatWallGuardRuntime:
     ) -> dict[str, Any]:
         """Return the bounded semantic context intended for runtime checks."""
         return {
-            "task_scope": {
-                "task_id": self.scope.task_id,
-                "intent": self.scope.intent,
-                "allowed_effects": sorted(effect.value for effect in self.scope.allowed_effects),
-            },
+            "task_scope": self.scope.as_dict(),
             **self.graph.compact_view(
                 recent_actions=recent_actions,
                 max_states=max_states,

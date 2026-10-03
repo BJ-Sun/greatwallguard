@@ -52,26 +52,53 @@ class TaskScope:
     allowed_effects: frozenset[EffectType] = frozenset()
     allowed_resources: tuple[str, ...] = ()
     allowed_destinations: tuple[str, ...] = ()
+    # Optional fields used by the lightweight pre-execution scope generator.
+    # Empty values preserve the original effect-only authorization behavior.
+    allowed_tools: tuple[str, ...] = ()
+    parameter_constraints: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def _matches(pattern: str, value: str) -> bool:
+        return pattern == "*" or value == pattern or value.startswith(pattern)
+
+    def permits_tool(self, tool: str) -> bool:
+        """Return whether a non-empty tool envelope admits ``tool``."""
+        return not self.allowed_tools or tool in self.allowed_tools
 
     def permits_effect(self, effect: "Effect") -> bool:
         if effect.kind not in self.allowed_effects:
             return False
-        if not self.allowed_resources:
+        # A send Effect targets a destination; attached/input resources are
+        # checked by parameter provenance in later versions, not against the
+        # destination namespace.
+        if effect.kind is EffectType.SEND or not self.allowed_resources:
             resource_ok = True
         else:
-            resource_ok = any(
-                effect.target == prefix or effect.target.startswith(prefix)
-                for prefix in self.allowed_resources
-            )
+            resource_ok = any(self._matches(prefix, effect.target) for prefix in self.allowed_resources)
         if not resource_ok:
             return False
         if effect.kind is EffectType.SEND and self.allowed_destinations:
             return any(
-                destination == effect.target
+                destination == "*"
+                or destination == effect.target
                 or effect.target.endswith(destination)
                 for destination in self.allowed_destinations
             )
         return effect.kind is not EffectType.SEND or bool(self.allowed_destinations)
+
+    def as_dict(self) -> dict[str, Any]:
+        """Serialize the scope without exposing mutable implementation details."""
+        return {
+            "task_id": self.task_id,
+            "intent": self.intent,
+            "allowed_effects": sorted(effect.value for effect in self.allowed_effects),
+            "allowed_resources": list(self.allowed_resources),
+            "allowed_destinations": list(self.allowed_destinations),
+            "allowed_tools": list(self.allowed_tools),
+            "parameter_constraints": dict(self.parameter_constraints),
+            "metadata": dict(self.metadata),
+        }
 
 
 @dataclass

@@ -23,6 +23,15 @@ class EffectAuthorizer:
     ) -> Decision:
         effects = tuple(effects)
         effect_ids = tuple(effect.id for effect in effects if effect.id)
+        if self.scope.allowed_tools and action_id is not None:
+            tool = str(graph.node(action_id).data.get("tool", ""))
+            if not self.scope.permits_tool(tool):
+                return Decision(
+                    DecisionKind.BLOCK,
+                    f"Tool {tool} is outside TaskScope",
+                    effect_ids,
+                    action_id,
+                )
         for effect in effects:
             if effect.kind is EffectType.UNKNOWN:
                 return Decision(DecisionKind.ASK, "tool has no registered Effect contract", effect_ids, action_id)
@@ -50,4 +59,3 @@ class EffectAuthorizer:
                     action_id,
                 )
         return Decision(DecisionKind.ALLOW, "all Effects fit the task scope", effect_ids, action_id)
-

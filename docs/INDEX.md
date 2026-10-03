@@ -9,6 +9,7 @@
 3. [图设计说明](GRAPH_DESIGN.md) —— 节点、边、证据、内容层和有界摘要。
 4. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
 5. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
+6. [简易 TaskScope 原型](TASK_SCOPE_MINIMAL.md) —— 仅基于正常任务、Agent 能力和工具 schema 的第一版生成器。
 
 ## B. 读取实验结论
 
