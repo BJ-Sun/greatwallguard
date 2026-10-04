@@ -11,6 +11,7 @@
 从请求侧选出 10 条覆盖单/双授权与含糊跨轮续办的序列，写成带逐字证据片段的 [`reference_draft.json`](../experiments/effect_commitment_pilot/reference_draft.json)。**这是助手根据请求文本复核的研究草稿，不是独立人工金标。**每条承诺记录来源轮次、操作、明确的对象/目的地/参数；“继续剩余沟通”“按记录处置”等没有明确对象的请求单列为 `unresolved`，不凭猜测扩权。
 
 本试验按“用户输入可信、攻击来自其他入口”的威胁模型解释这些消息；仍需逐条核查攻击仓库中每轮用户消息的实际控制者。若某些消息本身由攻击者控制，它们不能作为可信授权，相关结果必须从该子集剔除或另行报告。
+对 25 条配对攻击的只读元数据检查显示：19 条使用带 `user_prompt` 的脚本化 `input_events`，6 条使用单列的 `generation.injections`。这只能说明用户消息由实验计划预先冻结，**不能证明它们在威胁模型中均由真实良性用户独立发出**；因此目前的攻击侧数字必须带此来源限制。
 
 本地确定性提取器只读取上述请求侧视图，生成 [`local_candidates.jsonl`](../experiments/effect_commitment_pilot/local_candidates.jsonl)。外部 LLM 标注未获授权，当前流程没有把请求语料发送给第三方。
 
