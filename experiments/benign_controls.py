@@ -302,6 +302,7 @@ def curate(rows: list[dict[str, Any]], sources: dict[str, dict[str, Any]]) -> li
         frozen["target_effect"] = None
         frozen["success_oracle"] = {"type": "benign_control", "normal_task_success": True}
         frozen["run"]["task_success"] = True
+        frozen["run"]["outcome_cell"] = "normal_clean__task_success"
         # The shared runner uses attack-oriented labels even for no-injection
         # runs. They must not leak into a clean-control evaluation dataset.
         frozen["label"] = "normal_clean"

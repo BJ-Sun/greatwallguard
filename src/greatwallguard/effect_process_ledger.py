@@ -109,6 +109,7 @@ def build_effect_process_ledger(
             "call_id": action_data.get("call_id"),
             "tool": action_data.get("tool"),
             "arguments_digest": action_data.get("arguments_digest"),
+            "parameters": action_data.get("parameters"),
             "source_node_ids": source_ids,
             "source_integrities": _source_integrities(nodes, source_ids),
             "commit_evidence": data.get("commit_evidence"),

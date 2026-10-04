@@ -81,6 +81,8 @@ def _level1(graph: dict[str, Any]) -> dict[str, Any]:
                 "content_ref": _content_ref(data),
                 "session_id": data.get("session_id"),
                 "phase": data.get("phase"),
+                "request_text": data.get("request_text") if data.get("source") == "user" else None,
+                "request_truncated": data.get("request_truncated") if data.get("source") == "user" else None,
             }
         elif kind == "action":
             effects = effect_by_action.get(node_id, [])
@@ -92,6 +94,7 @@ def _level1(graph: dict[str, Any]) -> dict[str, Any]:
                 "operations": operations,
                 "call_id": data.get("call_id"),
                 "arguments_digest": data.get("arguments_digest"),
+                "parameters": data.get("parameters"),
                 "decision": data.get("decision"),
                 "execution_status": data.get("execution_status"),
             }

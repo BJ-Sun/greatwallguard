@@ -59,7 +59,7 @@ def _schema_name(schema: Mapping[str, Any]) -> str:
     function = schema.get("function")
     if isinstance(function, Mapping):
         return str(function.get("name") or schema.get("name") or "").strip()
-    return str(schema.get("name") or "").strip()
+    return str(schema.get("name") or schema.get("canonical_name") or "").strip()
 
 
 def _schema_description(schema: Mapping[str, Any]) -> str:

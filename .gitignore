@@ -20,4 +20,7 @@ experiments/*_graph/
 # Full OpenClaw workspaces and model logs are kept locally; selected frozen
 # benign cases and graph projections live in dataset/benign-controls/cases.
 dataset/benign-controls/raw-runs/
+experiments/effect_scope_pilot/results.jsonl
+experiments/effect_scope_pilot/full_attack_results.jsonl
+experiments/effect_scope_pilot/raw-stress/
 .DS_Store

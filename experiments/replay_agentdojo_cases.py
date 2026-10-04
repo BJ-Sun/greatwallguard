@@ -7,6 +7,7 @@ derived comparison artifact.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from collections import defaultdict
@@ -60,6 +61,26 @@ def _registry_for_tools(tools: set[str]) -> ToolContractRegistry:
     return registry
 
 
+def _parameter_projection(value: Any, *, depth: int = 0) -> Any:
+    """Bounded, tool-independent argument evidence for the audit graph.
+
+    Exact short scalar arguments support scope checks (recipient, file ID,
+    permission, time). Long free text retains a prefix and digest instead of
+    swelling every graph node with an entire document or email body.
+    """
+    if depth >= 3:
+        return {"type": type(value).__name__, "truncated": True}
+    if isinstance(value, dict):
+        return {str(key): _parameter_projection(item, depth=depth + 1)
+                for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))[:24]}
+    if isinstance(value, list):
+        return [_parameter_projection(item, depth=depth + 1) for item in value[:16]]
+    if isinstance(value, str) and len(value) > 256:
+        return {"prefix": value[:96], "sha256": hashlib.sha256(value.encode()).hexdigest(),
+                "characters": len(value), "truncated": True}
+    return value
+
+
 def replay_case(case: dict[str, Any]) -> dict[str, Any]:
     spec = case
     execution = case.get("execution") or case.get("run") or {}
@@ -72,7 +93,8 @@ def replay_case(case: dict[str, Any]) -> dict[str, Any]:
         allowed_destinations=("",),
     )
     runtime = GreatWallGuardRuntime(scope, contracts=_registry_for_tools(tools))
-    previous = runtime.observe_user(str(case.get("benign_task", "")))
+    previous = None
+    arguments_by_call: dict[str, Any] = {}
     execution = case.get("execution") or {}
     workspace_changes = execution.get("workspace_event_trace") or []
     workspace_reads = execution.get("workspace_read_trace") or []
@@ -105,17 +127,33 @@ def replay_case(case: dict[str, Any]) -> dict[str, Any]:
         trace_by_turn[int(item.get("turn", index))].append((index, item))
     all_turns = set(trace_by_turn)
     all_turns.update(int(event.get("turn", 0)) for event in workspace_changes + workspace_reads)
+    visible_by_turn = {
+        int(item.get("turn", index)): str(item.get("user_message", ""))
+        for index, item in enumerate(execution.get("visible_agent_turns") or [], start=1)
+        if item.get("user_message")
+    }
+    all_turns.update(visible_by_turn)
+    if not visible_by_turn:
+        previous = runtime.observe_user(str(case.get("benign_task", "")))
     for current_turn in sorted(turn for turn in all_turns if turn > 0):
+        if current_turn in visible_by_turn:
+            message = visible_by_turn[current_turn]
+            previous = runtime.observe("user", "user request", integrity="trusted",
+                                       turn=current_turn, raw_payload=message)
+            runtime.graph.node(previous).data["request_text"] = message[:2048]
+            runtime.graph.node(previous).data["request_truncated"] = len(message) > 2048
         for index, item in trace_by_turn.get(current_turn, []):
             tool = str(item.get("tool", "unknown"))
             arguments = item.get("arguments") or item.get("args") or {}
+            call_id = str(item.get("call_id") or f"{case.get('case_id', 'case')}-{index}")
+            arguments_by_call[call_id] = _parameter_projection(arguments)
             try:
                 runtime.before_tool_call(
                     tool,
                     arguments,
                     source_node_ids=(previous,),
                     turn=current_turn,
-                    call_id=str(item.get("call_id") or f"{case.get('case_id', 'case')}-{index}"),
+                    call_id=call_id,
                     execute=lambda item=item: _execute_recorded(item),
                 )
             except RuntimeError:
@@ -132,6 +170,10 @@ def replay_case(case: dict[str, Any]) -> dict[str, Any]:
             )
         replay_workspace_turn(current_turn)
     trace_record = runtime.trace_dict()
+    for node in (trace_record.get("graph") or {}).get("nodes", []):
+        data = node.get("data") or {}
+        if node.get("node_type") == "action" and data.get("call_id") in arguments_by_call:
+            data["parameters"] = arguments_by_call[data["call_id"]]
     levels = build_multi_level_graph(trace_record)
     run = case.get("run") or {}
     return {
