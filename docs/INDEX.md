@@ -10,6 +10,7 @@
 4. [图表征规范](REPRESENTATION_SPEC.md) —— 当前过程图和内容索引的正式边界。
 5. [当前进展](PROGRESS.md) —— 已完成、未完成和下一步判断。
 6. [简易 TaskScope 原型](TASK_SCOPE_MINIMAL.md) —— 仅基于正常任务、Agent 能力和工具 schema 的第一版生成器。
+7. [无注入正常任务对照集](BENIGN_CONTROL_DATASET.md) —— 六类攻击目标的真实正常重跑、质量门槛、覆盖率与评估边界。
 
 ## B. 读取实验结论
 

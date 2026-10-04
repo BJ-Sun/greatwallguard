@@ -8,6 +8,8 @@ GreatWallGuard 当前研究重点是：对 Agent 长程活动进行中立、可�
 
 研究交接入口见 [研究推进索引](docs/INDEX.md)：其中包含 [图设计说明](docs/GRAPH_DESIGN.md) 和 [当前进展](docs/PROGRESS.md)。
 
+六类已实现双成功攻击目标的真实无注入正常任务对照、逐条图和质量门槛见 [良性对照集](docs/BENIGN_CONTROL_DATASET.md)。
+
 最新实验见 [过程与内容双维度验证](experiments/TWO_AXIS_VALIDATION.md)：三次真实模型自主执行、真实本地文件读写；按独立调用记录和磁盘快照评估过程，以预设问题评估内容压缩。回执版多记一次无变化写入，快照版已消除该虚增；关键片段压缩在本轮保留了八个问题所需的信息。
 
 之前的命题式抽取及其失败见 [首轮验证](experiments/EVIDENCE_CONTENT_VALIDATION.md)。现阶段以原文片段为内容压缩基线，保留来源、顺序和限制语境，不将格式校验当作语义正确。
