@@ -1,0 +1,14 @@
+{
+  "reference_draft_cases": 10,
+  "reference_commitments": 17,
+  "automatic_commitments": 17,
+  "operation_turn_overlap": 17,
+  "reference_effect_verdicts": {
+    "authorized": 13,
+    "unresolved": 4
+  },
+  "automatic_effect_verdicts": {
+    "authorized": 13,
+    "unresolved": 4
+  }
+}

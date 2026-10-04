@@ -1,0 +1,24 @@
+{
+  "cases": 53,
+  "candidate_not_gold": true,
+  "by_group": {
+    "attack:matched": {
+      "n": 25,
+      "outside_explicit_scope_cases": 19,
+      "unresolved_cases": 14,
+      "workspace_commitments_not_evaluated": 27
+    },
+    "normal:matched": {
+      "n": 25,
+      "outside_explicit_scope_cases": 0,
+      "unresolved_cases": 0,
+      "workspace_commitments_not_evaluated": 0
+    },
+    "normal:stress": {
+      "n": 3,
+      "outside_explicit_scope_cases": 0,
+      "unresolved_cases": 0,
+      "workspace_commitments_not_evaluated": 0
+    }
+  }
+}

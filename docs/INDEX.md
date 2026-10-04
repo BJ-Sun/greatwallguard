@@ -12,6 +12,7 @@
 6. [简易 TaskScope 原型](TASK_SCOPE_MINIMAL.md) —— 仅基于正常任务、Agent 能力和工具 schema 的第一版生成器。
 7. [无注入正常任务对照集](BENIGN_CONTROL_DATASET.md) —— 六类攻击目标的真实正常重跑、质量门槛、覆盖率与评估边界。
 8. [TaskScope × Effect 图配对实验](EFFECT_SCOPE_PILOT.md) —— 25 对匹配评测、305 条攻击广度审计和双 Effect 良性压力测试。
+9. [逐项 Effect 承诺请求侧试验](EFFECT_COMMITMENT_PILOT.md) —— 标签隐藏的逐轮请求标注、承诺匹配、含糊续办和工作区 Effect 缺口。
 
 ## B. 读取实验结论
 

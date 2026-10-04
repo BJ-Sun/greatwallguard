@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Frozen matched pilot: pre-execution task authority vs observed graph Effects.
 
-The detector receives only the first visible user request, advertised tool
+The detector receives cumulative user requests as they arrive, advertised tool
 schemas, and the projected L0 graph. Labels, attack goals, case IDs, and
 success oracles are used by the evaluation harness *after* detection only.
 """

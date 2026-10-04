@@ -10,6 +10,7 @@ GreatWallGuard 当前研究重点是：对 Agent 长程活动进行中立、可�
 
 六类已实现双成功攻击目标的真实无注入正常任务对照、逐条图和质量门槛见 [良性对照集](docs/BENIGN_CONTROL_DATASET.md)。
 第一轮任务授权评测见 [TaskScope × Effect 图配对实验](docs/EFFECT_SCOPE_PILOT.md)：它同时报告攻击检出、普通正常任务与合法多副作用任务上的误报。
+“按具体事项授权”而非固定次数的初步验证见 [逐项 Effect 承诺试验](docs/EFFECT_COMMITMENT_PILOT.md)。
 
 最新实验见 [过程与内容双维度验证](experiments/TWO_AXIS_VALIDATION.md)：三次真实模型自主执行、真实本地文件读写；按独立调用记录和磁盘快照评估过程，以预设问题评估内容压缩。回执版多记一次无变化写入，快照版已消除该虚增；关键片段压缩在本轮保留了八个问题所需的信息。
 
