@@ -8,13 +8,17 @@ existing graph's non-temporal edges, never future results.
 
 from __future__ import annotations
 
+import argparse
 import json
 
 from effect_scope_pilot import ATTACK_REPO, ROOT, read_jsonl, replay_case
+from evaluate_online_effect_guard import replay as replay_online_guard
+from online_effect_guard import OnlineEffectGuard
 
 
 MAPPING = ROOT / "experiments" / "effect_commitment_pilot" / "evaluation_mapping.jsonl"
 STRESS = ROOT / "dataset" / "benign-controls" / "stress-cases" / "GWG-STRESS-EMAIL-2" / "case.json"
+LOCAL_CONTROL_ROOT = ROOT / "dataset" / "benign-controls" / "raw-runs"
 CAUSAL_EDGES = {"derived_from", "reads", "causes", "updates"}
 
 
@@ -108,5 +112,47 @@ def run() -> dict:
     return summary
 
 
+def audit_local_controls() -> dict:
+    """Descriptive assessment of the three approved, locally retained runs."""
+    results = {}
+    for case_id in ("GWG-DEC-EMAIL-01", "GWG-DEC-EMAIL-02", "GWG-DEC-EMAIL-03"):
+        path = LOCAL_CONTROL_ROOT / case_id / "cases" / f"{case_id}.json"
+        if not path.exists():
+            results[case_id] = {"available": False}
+            continue
+        case = json.loads(path.read_text(encoding="utf-8"))
+        generation = case.get("generation") or {}
+        sends = [call for call in case.get("execution", {}).get("tool_call_trace", [])
+                 if call.get("tool") == "send_email" and not call.get("error")]
+        result = {"available": True, "visible_turns": len(case.get("execution", {}).get("visible_agent_turns") or []),
+                  "no_injection_inputs": not any(generation.get(key) for key in ("injections", "input_events", "workspace_events")),
+                  "successful_send_calls": len(sends),
+                  "runner_task_success": bool(case.get("run", {}).get("task_success")),
+                  "runner_uses_fixed_body_oracle": True}
+        if sends:
+            actual = sends[0]
+            result["online_baseline"] = [row for row in replay_online_guard(case) if row["tool"] == "send_email"]
+            result["graph_evidence"] = audit_case(case, "local_normal_candidate")[0]
+            if case_id == "GWG-DEC-EMAIL-01":
+                # Analyst-supplied authorization from the visible two-turn
+                # request. This is an oracle ablation, not automatic parsing.
+                oracle = OnlineEffectGuard()
+                oracle.commitments.append({"turn": 2, "operation": "send_email",
+                                           "destination": "owner@example.com", "subject": "Project follow-up",
+                                           "evidence_span": "analyst_request_only_oracle"})
+                decision = oracle.before_tool_call("send_email", actual.get("arguments") or {},
+                                                   turn=int(actual["turn"]), call_id="oracle-send")
+                result["analyst_scope_oracle_verdict"] = decision.verdict
+                result["analyst_scope_oracle_reason"] = decision.reason
+        results[case_id] = result
+    return results
+
+
 if __name__ == "__main__":
-    print(json.dumps(run(), ensure_ascii=False, indent=2))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--include-local-controls", action="store_true")
+    args = parser.parse_args()
+    output = run()
+    if args.include_local_controls:
+        output["local_controls"] = audit_local_controls()
+    print(json.dumps(output, ensure_ascii=False, indent=2))
