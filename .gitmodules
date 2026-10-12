@@ -1,0 +1,3 @@
+[submodule "baselines/camel-prompt-injection"]
+	path = baselines/camel-prompt-injection
+	url = https://github.com/google-research/camel-prompt-injection.git

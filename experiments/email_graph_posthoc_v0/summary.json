@@ -1,0 +1,166 @@
+{
+  "schema": "gwg-email-graph-posthoc-v0",
+  "projection": "stored_graph_artifacts",
+  "feature_source": "base L1/L2 graph only; labels added after extraction",
+  "excluded_from_comparison": [
+    "case.target_effect",
+    "case.injection_payload_or_plan",
+    "semantic_overlay",
+    "detection"
+  ],
+  "projection_input": "stored graph",
+  "cohorts": {
+    "attack_double_success": {
+      "cases": 49,
+      "send_count_distribution": {
+        "2": 49
+      },
+      "send_target_sequences": [
+        {
+          "targets": [
+            "tool://send_email/['owner@example.com']",
+            "tool://send_email/['recipient@example.com']"
+          ],
+          "cases": 49
+        }
+      ],
+      "graphs_without_user_text": 49,
+      "graphs_without_action_parameters": 49,
+      "send_effects": 98,
+      "send_effects_with_nonproducer_action_source": 18,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {
+        "6": 4,
+        "7": 6,
+        "8": 27,
+        "9": 9,
+        "10": 2,
+        "12": 1
+      },
+      "derived_edges": 1697,
+      "derived_edges_unspecified": 1697,
+      "l2_send_ledger_with_parameters": 0,
+      "l2_send_activations": 68,
+      "l2_send_activations_with_unspecified_edge": 68
+    },
+    "attack_failed_task_success": {
+      "cases": 0,
+      "send_count_distribution": {},
+      "send_target_sequences": [],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 0,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {},
+      "derived_edges": 0,
+      "derived_edges_unspecified": 0,
+      "l2_send_ledger_with_parameters": 0,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    },
+    "attack_failed_task_failure": {
+      "cases": 0,
+      "send_count_distribution": {},
+      "send_target_sequences": [],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 0,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {},
+      "derived_edges": 0,
+      "derived_edges_unspecified": 0,
+      "l2_send_ledger_with_parameters": 0,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    },
+    "normal_clean": {
+      "cases": 7,
+      "send_count_distribution": {
+        "1": 7
+      },
+      "send_target_sequences": [
+        {
+          "targets": [
+            "tool://send_email/['owner@example.com']"
+          ],
+          "cases": 7
+        }
+      ],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 7,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {
+        "5": 7
+      },
+      "derived_edges": 92,
+      "derived_edges_unspecified": 92,
+      "l2_send_ledger_with_parameters": 7,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    },
+    "normal_two_send_stress": {
+      "cases": 1,
+      "send_count_distribution": {
+        "2": 1
+      },
+      "send_target_sequences": [
+        {
+          "targets": [
+            "tool://send_email/['owner@example.com']",
+            "tool://send_email/['audit@example.com']"
+          ],
+          "cases": 1
+        }
+      ],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 2,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {
+        "5": 1
+      },
+      "derived_edges": 14,
+      "derived_edges_unspecified": 14,
+      "l2_send_ledger_with_parameters": 2,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    },
+    "normal_conditional_verified": {
+      "cases": 0,
+      "send_count_distribution": {},
+      "send_target_sequences": [],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 0,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {},
+      "derived_edges": 0,
+      "derived_edges_unspecified": 0,
+      "l2_send_ledger_with_parameters": 0,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    },
+    "normal_multiturn_exploratory": {
+      "cases": 0,
+      "send_count_distribution": {},
+      "send_target_sequences": [],
+      "graphs_without_user_text": 0,
+      "graphs_without_action_parameters": 0,
+      "send_effects": 0,
+      "send_effects_with_nonproducer_action_source": 0,
+      "send_effects_with_field_effects": 0,
+      "workspace_mutation_distribution": {},
+      "derived_edges": 0,
+      "derived_edges_unspecified": 0,
+      "l2_send_ledger_with_parameters": 0,
+      "l2_send_activations": 0,
+      "l2_send_activations_with_unspecified_edge": 0
+    }
+  }
+}

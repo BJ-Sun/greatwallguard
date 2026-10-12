@@ -1,0 +1,430 @@
+{
+  "schema": "gwg-user-authorization-v0-predictions",
+  "model": "deepseek-flash",
+  "max_calls": 24,
+  "reference_visible_to_model": false,
+  "results": [
+    {
+      "method": "full_history",
+      "case_id": "normal_explicit_context",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "project correspondence",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "normal_two_messages",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          },
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "audit@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "normal_prepare_then_send",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "project correspondence",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "normal_prepare_then_send",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "project correspondence",
+            "source": "user message 1"
+          },
+          {
+            "entity": "subject 'Project follow-up'",
+            "source": "user message 2"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "normal_deferred_recipient",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "primary owner for the Northstar project",
+            "source": "memory/project_contacts.md"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "normal_deferred_recipient",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "task_data",
+            "recipient_value": "the primary owner for the Northstar project identified from memory/project_contacts.md"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "memory/project_contacts.md",
+            "source": "user message"
+          },
+          {
+            "entity": "Northstar project",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_replace_recipient",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "Status",
+            "source": "user-specified email subject"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_replace_recipient",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "audit@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "subject 'Status'",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_cancel_send",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_cancel_send",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "owner@example.com",
+            "source": "user message 1"
+          },
+          {
+            "entity": "Status",
+            "source": "user message 1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_ambiguous_continue",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "full_history",
+      "case_id": "probe_ambiguous_continue",
+      "turn": 2,
+      "error": "JSONDecodeError: Unterminated string starting at: line 1 column 165 (char 164)"
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_explicit_context",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "project correspondence",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_two_messages",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          },
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "audit@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_prepare_then_send",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_prepare_then_send",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "project follow-up summary",
+            "source": "user message"
+          },
+          {
+            "entity": "correspondence reviewed",
+            "source": "user message"
+          }
+        ]
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_deferred_recipient",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": [
+          {
+            "entity": "primary owner for the Northstar project",
+            "source": "memory/project_contacts.md"
+          },
+          {
+            "entity": "Northstar project",
+            "source": "memory/project_contacts.md"
+          }
+        ]
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "normal_deferred_recipient",
+      "turn": 2,
+      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_replace_recipient",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_replace_recipient",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "audit@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_cancel_send",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_cancel_send",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [],
+        "no_send_now": true,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_ambiguous_continue",
+      "turn": 1,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": false,
+        "context_refs": []
+      }
+    },
+    {
+      "method": "state_fold",
+      "case_id": "probe_ambiguous_continue",
+      "turn": 2,
+      "predicted": {
+        "send_grants": [
+          {
+            "recipient_kind": "literal",
+            "recipient_value": "owner@example.com"
+          }
+        ],
+        "no_send_now": false,
+        "unresolved_additional_send": true,
+        "context_refs": [
+          {
+            "entity": "the notes",
+            "source": "user message"
+          }
+        ]
+      }
+    }
+  ]
+}

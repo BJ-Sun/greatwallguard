@@ -145,7 +145,9 @@ class EffectGraph:
                 "operation": effect.operation,
                 "persistent": effect.persistent,
                 "reversible": effect.reversible,
-                "status": effect.metadata.get("status", "authorized"),
+                # The factual graph does not itself confer authorization.
+                # A separate authorization ledger may attach a decision later.
+                "status": effect.metadata.get("status", "proposed"),
                 "source_node_ids": list(effect.source_node_ids),
                 "metadata": effect.metadata,
             },

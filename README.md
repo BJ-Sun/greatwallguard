@@ -8,6 +8,8 @@ GreatWallGuard 当前研究重点是：对 Agent 长程活动进行中立、可�
 
 研究交接入口见 [研究推进索引](docs/INDEX.md)：其中包含 [图设计说明](docs/GRAPH_DESIGN.md) 和 [当前进展](docs/PROGRESS.md)。
 
+外部防御基线：官方 CaMeL 源码以固定提交加入 `baselines/camel-prompt-injection`；[复现结果与实现导读](baselines/README.md)说明已通过的测试，以及尚未运行的模型实验。
+
 六类已实现双成功攻击目标的真实无注入正常任务对照、逐条图和质量门槛见 [良性对照集](docs/BENIGN_CONTROL_DATASET.md)。
 第一轮任务授权评测见 [TaskScope × Effect 图配对实验](docs/EFFECT_SCOPE_PILOT.md)：它同时报告攻击检出、普通正常任务与合法多副作用任务上的误报。
 “按具体事项授权”而非固定次数的初步验证见 [逐项 Effect 承诺试验](docs/EFFECT_COMMITMENT_PILOT.md)。

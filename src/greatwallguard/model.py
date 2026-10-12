@@ -30,6 +30,9 @@ class EdgeType(str, Enum):
     CAUSES = "causes"
     UPDATES = "updates"
     READS = "reads"
+    RETURNS = "returns"
+    PARAMETER_CANDIDATE = "parameter_candidate"
+    CONFIRMS = "confirms"
     NEXT = "next"
 
 
