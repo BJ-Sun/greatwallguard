@@ -1,5 +1,11 @@
 # GreatWallGuard
 
+当前可复用的在线授权基础模块见
+[Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)。它提供稳定的
+`on_user_message`、`before_tool_call` 和 `after_tool_result` 接口，并支持状态持久化。
+方案边界、相关工作定位、当前实验结论和协作任务见
+[方法总览与协作入口](docs/METHOD_OVERVIEW_AND_HANDOFF.md)。
+
 GreatWallGuard 当前研究重点是：对 Agent 长程活动进行中立、可回查的压缩表征，为后续防御监控提供输入。仓库同时保留早期任务授权原型。
 
 > 多步影响可以通过文件、记忆、环境以及保留在上下文中的信息延续。图记录可观测的过程与对象关联，内容索引保留带证据的语义；尚未观测或未验证的信息显式保留不确定性。

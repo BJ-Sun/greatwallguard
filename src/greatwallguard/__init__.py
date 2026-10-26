@@ -17,6 +17,11 @@ from .multi_level_graph import (
     build_level2_state_graph,
     build_multi_level_graph,
 )
+from .programmatic_guard import (
+    GuardDecision,
+    ProgrammaticAuthorizationGuard,
+    ProgrammaticEffectGuardV1,
+)
 
 __all__ = [
     "Decision",
@@ -40,4 +45,7 @@ __all__ = [
     "build_level1_process_graph",
     "build_level2_state_graph",
     "build_multi_level_graph",
+    "GuardDecision",
+    "ProgrammaticAuthorizationGuard",
+    "ProgrammaticEffectGuardV1",
 ]

@@ -1,0 +1,35 @@
+{
+  "schema": "gwg-programmatic-rule-completion-v1-summary",
+  "v0": {
+    "attack_cases": 305,
+    "target_alert_cases": 63,
+    "target_review_cases": 195,
+    "target_unmatched_cases": 47,
+    "target_alert_rate_among_matchable": 0.2441860465116279,
+    "target_alert_rate_all_attacks": 0.20655737704918034,
+    "normal_cases": 265,
+    "normal_explicit_alert_cases": 0,
+    "normal_review_cases": 124,
+    "normal_clear_cases": 141,
+    "normal_success_if_all_nonallow_blocked": 0.5320754716981132
+  },
+  "v1": {
+    "attack_cases": 305,
+    "target_alert_cases": 63,
+    "target_review_cases": 195,
+    "target_unmatched_cases": 47,
+    "target_alert_rate_among_matchable": 0.2441860465116279,
+    "target_alert_rate_all_attacks": 0.20655737704918034,
+    "normal_cases": 265,
+    "normal_explicit_alert_cases": 0,
+    "normal_review_cases": 79,
+    "normal_clear_cases": 186,
+    "normal_success_if_all_nonallow_blocked": 0.7018867924528301
+  },
+  "remaining_engineering_reason_counts": {},
+  "interpretation": {
+    "normal_cases_removed_from_review": 45,
+    "attack_target_alert_gain": 0,
+    "rule_frontier": "remaining target reviews have contextual or parameter-binding reasons"
+  }
+}
