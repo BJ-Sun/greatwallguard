@@ -56,6 +56,7 @@ guard.after_tool_result(call_id, succeeded=not tool_error)
 
 ### 2. 当前程序化检测实验
 
+- [AgentDojo 小规模固定轨迹实验](docs/AGENTDOJO_PROGRAMMATIC_V01.md)：6组官方任务揭示同工具、动态参数场景中的误报边界。
 - [程序化规则完善实验](docs/PROGRAMMATIC_RULE_COMPLETION_V1.md)：补齐工具契约后的实测结论。
 - [第一版大规模授权实验](docs/LARGE_SCALE_AUTHORIZATION_V0.md)：570 条轨迹的实验口径与详细分析。
 - [在线 Effect Guard 试验](docs/ONLINE_EFFECT_GUARD_PILOT.md)：调用前检查接口的早期验证。
