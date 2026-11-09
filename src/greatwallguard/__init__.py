@@ -83,6 +83,18 @@ from .authorization_runtime import (
     AuthorizationRuntime, ObservationContract, PendingAuthorization,
 )
 from .method import GreatWallGuardMethod
+from .final_gateway import (
+    EffectSafetyContract,
+    EvidenceRecoveryAction,
+    FinalAuthorizationGateway,
+    FinalDisposition,
+    FinalGatewayDecision,
+    SafeExecutionResult,
+    SafeSubstitute,
+    SafeSubstituteExecutor,
+    contract,
+    recovery_plan,
+)
 
 __all__ = [
     "Decision",
@@ -166,4 +178,14 @@ __all__ = [
     "ObservationContract",
     "PendingAuthorization",
     "GreatWallGuardMethod",
+    "EffectSafetyContract",
+    "EvidenceRecoveryAction",
+    "FinalAuthorizationGateway",
+    "FinalDisposition",
+    "FinalGatewayDecision",
+    "SafeExecutionResult",
+    "SafeSubstitute",
+    "SafeSubstituteExecutor",
+    "contract",
+    "recovery_plan",
 ]

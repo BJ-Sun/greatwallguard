@@ -25,6 +25,7 @@ Agent 工具调用 ──→ ALLOW / ALERT / REVIEW
 - 相比保守策略，高置信攻击阻断率分别从 7.4% 提升到 70.6%、从 2.1% 提升到 39.8%，正常硬误报仍为 0；`Review` 不计作攻击检出；
 - 阶段三已完成 638 个语义未决调用的全量审计；第一版虽然保持攻击直接放行为 0，但产生 22/157 个正常硬告警；
 - 最新三态证明要求 LLM 区分 `SUPPORTED / CONTRADICTED / INSUFFICIENT`，并由程序校验有限冲突证书；正常硬告警降至 **1/157（0.64%）**，攻击直接放行仍为 0；
+- 终局网关已将内部不确定性收敛为“原操作、安全替代、拒绝或确认”，全量策略回放中最终 `REVIEW` 为 0、用户确认为 0；正常原操作执行率 64.3%，另有 35.0% 转为安全替代；
 - 当前限制是冲突证书中的操作数尚未全部绑定到授权 DAG 和执行图的具体节点，因此证据不足的调用仍保留 `REVIEW`。
 
 ## 快速使用
@@ -65,9 +66,10 @@ if decision.verdict == "allow":
 4. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
 5. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
 6. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
-7. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-8. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-9. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+7. [收敛后的终局授权方法](docs/FINAL_CONVERGED_METHOD.md)：取消最终 REVIEW、降低用户确认、效果安全替代与最终实验结果。
+8. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+9. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+10. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
@@ -124,6 +126,7 @@ if decision.verdict == "allow":
 | `src/greatwallguard/relational_authorization.py` | 计划无关的关系授权验证器 |
 | `src/greatwallguard/relation_proof.py` | 执行事实与可重放证明规则 |
 | `src/greatwallguard/semantic_audit.py` | 三态语义证明与有限冲突证书校验 |
+| `src/greatwallguard/final_gateway.py` | 自动补证与无 REVIEW 的终局效果处置 |
 | `src/greatwallguard/authorization_rules.py` | 结构化授权、账本和参数绑定原型 |
 | `src/greatwallguard/native_openclaw_graph.py` | OpenClaw 原生事件建图 |
 | `experiments/large_scale_authorization_v1.py` | 570 条轨迹回放 |
