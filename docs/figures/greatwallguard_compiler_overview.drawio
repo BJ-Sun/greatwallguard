@@ -1,0 +1,99 @@
+<mxfile host="app.diagrams.net" modified="2026-10-30T06:30:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="greatwallguard-overview" name="Method Overview">
+    <mxGraphModel dx="1600" dy="920" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="920" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="&lt;b&gt;GreatWallGuard: Compile User Intent, Verify Runtime Effects&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=26;fontColor=#172B4D;" vertex="1" parent="1">
+          <mxGeometry x="220" y="25" width="1160" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="A finite authorization program constrains an open-ended, dynamically planned Agent execution" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#5E6C84;" vertex="1" parent="1">
+          <mxGeometry x="300" y="68" width="1000" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="compile_panel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F8FF;strokeColor=#7AA7E8;strokeWidth=2;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="55" y="125" width="1070" height="315" as="geometry"/>
+        </mxCell>
+        <mxCell id="compile_label" value="&lt;b&gt;① Authorization Compilation&lt;/b&gt; &amp;nbsp;—&amp;nbsp; What the user permits" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#174A8B;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="600" height="32" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="user_input" value="&lt;b&gt;Trusted User Messages&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;“Book the hotel only if&lt;br&gt;its rating is above 4.”&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4C84D3;strokeWidth=2;fontSize=15;fontColor=#172B4D;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="85" y="205" width="230" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="schema_input" value="&lt;b&gt;Tool Schemas&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;reserve_hotel(hotel,&lt;br&gt;start_day, end_day)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4C84D3;strokeWidth=2;fontSize=15;fontColor=#172B4D;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="85" y="325" width="230" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="compiler" value="&lt;b&gt;Intent Compiler&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;LLM front-end&lt;br&gt;+ deterministic type checker&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFF;strokeColor=#2F6DB5;strokeWidth=2;fontSize=16;fontColor=#174A8B;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="385" y="245" width="220" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="auth_ir" value="&lt;b&gt;Authorization IR @ v&lt;sub&gt;t&lt;/sub&gt;&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#174A8B&quot;&gt;SOURCE&lt;/font&gt; &amp;nbsp;hotel reviews&lt;br&gt;&lt;font color=&quot;#174A8B&quot;&gt;DERIVE&lt;/font&gt; &amp;nbsp;rating = project(...)&lt;br&gt;&lt;font color=&quot;#174A8B&quot;&gt;REQUIRE&lt;/font&gt; rating &amp;gt; 4&lt;br&gt;&lt;font color=&quot;#174A8B&quot;&gt;PERMIT&lt;/font&gt; &amp;nbsp;reserve_hotel(...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F6DB5;strokeWidth=2;fontSize=15;fontColor=#172B4D;align=left;spacingLeft=16;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="675" y="195" width="310" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="stdlib" value="&lt;b&gt;Finite Operator Library&lt;/b&gt;&lt;br&gt;select · project · join · aggregate · compute · normalize" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEF4FC;strokeColor=#7AA7E8;dashed=1;fontSize=13;fontColor=#365A7A;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="675" y="392" width="310" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="new_user" value="New trusted message&lt;br&gt;&lt;b&gt;GRANT · REFINE · REVOKE&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#5AA469;fontSize=13;fontColor=#2E6A3C;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="995" y="215" width="110" height="88" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="runtime_panel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFBFC;strokeColor=#AAB4C3;strokeWidth=2;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="55" y="475" width="1070" height="315" as="geometry"/>
+        </mxCell>
+        <mxCell id="runtime_label" value="&lt;b&gt;② Online Agent Execution&lt;/b&gt; &amp;nbsp;—&amp;nbsp; What actually happens" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#44546A;" vertex="1" parent="1">
+          <mxGeometry x="80" y="490" width="600" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="agent" value="&lt;b&gt;Black-box Agent&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;Free to plan, branch,&lt;br&gt;retry, and recover&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B8794;strokeWidth=2;fontSize=15;fontColor=#172B4D;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="85" y="585" width="210" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="monitor" value="&lt;b&gt;Host-side Monitor&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;Tool calls · returns&lt;br&gt;writes · reads · versions&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F3F5;strokeColor=#7B8794;strokeWidth=2;fontSize=15;fontColor=#172B4D;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="385" y="585" width="220" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="fact_graph" value="&lt;b&gt;Execution Fact Graph&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#C56A00&quot;&gt;Observation&lt;/font&gt; rating = 4.2&lt;br&gt;↳ source: call_12&lt;br&gt;&lt;font color=&quot;#44546A&quot;&gt;Action&lt;/font&gt; reserve_hotel(...)&lt;br&gt;↳ state/effect version: v3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B8794;strokeWidth=2;fontSize=15;fontColor=#172B4D;align=left;spacingLeft=16;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="675" y="555" width="310" height="175" as="geometry"/>
+        </mxCell>
+        <mxCell id="effect_gate" value="&lt;b&gt;Pending Effect&lt;/b&gt;&lt;br&gt;reserve_hotel(...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E5;strokeColor=#D9822B;strokeWidth=2;fontSize=14;fontColor=#8A4B08;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="995" y="595" width="110" height="85" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="verifier" value="&lt;b&gt;③ Proof Verifier&lt;/b&gt;&lt;br&gt;&lt;br&gt;Bind symbolic variables to runtime facts&lt;br&gt;Check provenance, guards, versions, effects" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4C9560;strokeWidth=3;fontSize=16;fontColor=#245C36;spacing=12;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="295" width="260" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="proof_note" value="&lt;font color=&quot;#245C36&quot;&gt;$rating ← call_12.rating = 4.2&lt;br&gt;4.2 &amp;gt; 4 ✓&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3FBF5;strokeColor=#8BC49A;dashed=1;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="470" width="220" height="62" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="proved" value="&lt;b&gt;PROVED&lt;/b&gt;&lt;br&gt;Execute" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF3E4;strokeColor=#3A8D50;strokeWidth=2;fontSize=15;fontColor=#1F6A35;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="600" width="120" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="unknown" value="&lt;b&gt;UNKNOWN&lt;/b&gt;&lt;br&gt;Local audit / confirm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6A100;strokeWidth=2;fontSize=14;fontColor=#7A5A00;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="600" width="140" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="denied" value="&lt;b&gt;DENIED&lt;/b&gt;&lt;br&gt;Block" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDE2E1;strokeColor=#C94C4C;strokeWidth=2;fontSize=15;fontColor=#8B2D2D;" vertex="1" parent="1">
+          <mxGeometry x="1455" y="600" width="105" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="longrange" value="&lt;b&gt;Long-range check&lt;/b&gt;&lt;br&gt;Effect ← parameter ← state@v3 ← authorized UPDATE?" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6F0FA;strokeColor=#8E63B0;strokeWidth=2;fontSize=14;fontColor=#5D3A78;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="710" width="390" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_user_compiler" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4C84D3;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="user_input" target="compiler"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_schema_compiler" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4C84D3;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="schema_input" target="compiler"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_compiler_ir" value="compile" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2F6DB5;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;fontColor=#174A8B;" edge="1" parent="1" source="compiler" target="auth_ir"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_new_ir" value="incremental update" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5AA469;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=11;fontColor=#2E6A3C;" edge="1" parent="1" source="new_user" target="auth_ir"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ir_verifier" value="proof obligations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2F6DB5;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;fontColor=#174A8B;" edge="1" parent="1" source="auth_ir" target="verifier"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="e_agent_monitor" value="tool events" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7B8794;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;fontColor=#44546A;" edge="1" parent="1" source="agent" target="monitor"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_monitor_graph" value="record" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7B8794;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;fontColor=#44546A;" edge="1" parent="1" source="monitor" target="fact_graph"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_graph_effect" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#D9822B;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="fact_graph" target="effect_gate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_graph_verifier" value="runtime evidence" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7B8794;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;fontColor=#44546A;" edge="1" parent="1" source="fact_graph" target="verifier"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_effect_verifier" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#D9822B;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="effect_gate" target="verifier"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="e_verifier_proved" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#3A8D50;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="verifier" target="proved"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_verifier_unknown" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#D6A100;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="verifier" target="unknown"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_verifier_denied" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#C94C4C;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="verifier" target="denied"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_verifier_longrange" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8E63B0;strokeWidth=2;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="verifier" target="longrange"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920">
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2F6DB5"/></marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#7B8794"/></marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#D9822B"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3A8D50"/></marker>
+    <marker id="arrow-yellow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#D6A100"/></marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#C94C4C"/></marker>
+    <style>
+      .title{font:700 28px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172B4D}.subtitle{font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#5E6C84}.section{font:700 19px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card-title{font:700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172B4D}.body{font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#44546A}.small{font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#5E6C84}.mono{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#172B4D}.label{font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.panel{rx:16;stroke-width:2}.card{rx:12;stroke-width:2}.edge{fill:none;stroke-width:2.2}.dash{stroke-dasharray:7 6}
+    </style>
+  </defs>
+  <rect width="1600" height="920" fill="#FFFFFF"/>
+  <text x="800" y="52" class="title" text-anchor="middle">GreatWallGuard: Compile User Intent, Verify Runtime Effects</text>
+  <text x="800" y="82" class="subtitle" text-anchor="middle">A finite authorization program constrains an open-ended, dynamically planned Agent execution</text>
+
+  <rect x="45" y="120" width="1070" height="320" class="panel" fill="#F4F8FF" stroke="#7AA7E8"/>
+  <text x="72" y="157" class="section" fill="#174A8B">① Authorization Compilation — What the user permits</text>
+
+  <rect x="75" y="195" width="235" height="105" class="card" fill="#FFFFFF" stroke="#4C84D3"/>
+  <text x="192" y="222" class="card-title" text-anchor="middle">Trusted User Messages</text>
+  <text x="192" y="250" class="body" text-anchor="middle"><tspan x="192">“Book the hotel only if</tspan><tspan x="192" dy="21">its rating is above 4.”</tspan></text>
+
+  <rect x="75" y="322" width="235" height="85" class="card" fill="#FFFFFF" stroke="#4C84D3"/>
+  <text x="192" y="348" class="card-title" text-anchor="middle">Tool Schemas</text>
+  <text x="192" y="375" class="small" text-anchor="middle"><tspan x="192">reserve_hotel(hotel,</tspan><tspan x="192" dy="18">start_day, end_day)</tspan></text>
+
+  <rect x="380" y="245" width="220" height="120" class="card" fill="#DCEBFF" stroke="#2F6DB5"/>
+  <text x="490" y="278" class="card-title" text-anchor="middle" fill="#174A8B">Intent Compiler</text>
+  <text x="490" y="308" class="body" text-anchor="middle"><tspan x="490">LLM front-end</tspan><tspan x="490" dy="22">+ deterministic type checker</tspan></text>
+
+  <rect x="670" y="188" width="315" height="198" class="card" fill="#FFFFFF" stroke="#2F6DB5"/>
+  <text x="691" y="220" class="card-title" fill="#174A8B">Authorization IR (version t)</text>
+  <text x="691" y="252" class="mono" fill="#174A8B">SOURCE</text><text x="780" y="252" class="mono">hotel reviews</text>
+  <text x="691" y="282" class="mono" fill="#174A8B">DERIVE</text><text x="780" y="282" class="mono">rating = project(...)</text>
+  <text x="691" y="312" class="mono" fill="#174A8B">REQUIRE</text><text x="780" y="312" class="mono">rating &gt; 4</text>
+  <text x="691" y="342" class="mono" fill="#174A8B">PERMIT</text><text x="780" y="342" class="mono">reserve_hotel(...)</text>
+
+  <rect x="670" y="397" width="315" height="30" rx="10" fill="#EEF4FC" stroke="#7AA7E8" stroke-dasharray="6 5"/>
+  <text x="827" y="417" class="small" text-anchor="middle">Operator Library: select · project · join · aggregate · compute</text>
+
+  <rect x="930" y="132" width="168" height="48" class="card" fill="#E8F5E9" stroke="#5AA469"/>
+  <text x="1014" y="152" class="small" text-anchor="middle">New trusted message</text>
+  <text x="1014" y="170" class="small" text-anchor="middle" font-weight="700">GRANT · REFINE · REVOKE</text>
+
+  <path d="M310 247 H345 V285 H380" class="edge" stroke="#2F6DB5" marker-end="url(#arrow-blue)"/>
+  <path d="M310 364 H345 V325 H380" class="edge" stroke="#2F6DB5" marker-end="url(#arrow-blue)"/>
+  <path d="M600 305 H670" class="edge" stroke="#2F6DB5" marker-end="url(#arrow-blue)"/>
+  <text x="635" y="295" class="label" fill="#174A8B" text-anchor="middle">compile</text>
+  <path d="M1014 180 V187 H940" class="edge dash" stroke="#5AA469" marker-end="url(#arrow-green)"/>
+
+  <rect x="45" y="475" width="1070" height="315" class="panel" fill="#FAFBFC" stroke="#AAB4C3"/>
+  <text x="72" y="512" class="section" fill="#44546A">② Online Agent Execution — What actually happens</text>
+
+  <rect x="75" y="585" width="220" height="105" class="card" fill="#FFFFFF" stroke="#7B8794"/>
+  <text x="185" y="618" class="card-title" text-anchor="middle">Black-box Agent</text>
+  <text x="185" y="647" class="body" text-anchor="middle"><tspan x="185">Free to plan, branch,</tspan><tspan x="185" dy="21">retry, and recover</tspan></text>
+
+  <rect x="380" y="585" width="220" height="105" class="card" fill="#F1F3F5" stroke="#7B8794"/>
+  <text x="490" y="618" class="card-title" text-anchor="middle">Host-side Monitor</text>
+  <text x="490" y="647" class="body" text-anchor="middle"><tspan x="490">Tool calls · returns</tspan><tspan x="490" dy="21">writes · reads · versions</tspan></text>
+
+  <rect x="670" y="550" width="315" height="180" class="card" fill="#FFFFFF" stroke="#7B8794"/>
+  <text x="691" y="581" class="card-title">Execution Fact Graph</text>
+  <text x="691" y="615" class="mono"><tspan fill="#C56A00">OBSERVATION</tspan><tspan> rating = 4.2</tspan></text>
+  <text x="714" y="642" class="mono">↳ source: call_12</text>
+  <text x="691" y="674" class="mono"><tspan fill="#44546A">ACTION</tspan><tspan> reserve_hotel(...)</tspan></text>
+  <text x="714" y="701" class="mono">↳ state/effect version: v3</text>
+
+  <rect x="995" y="595" width="103" height="85" class="card" fill="#FFF4E5" stroke="#D9822B"/>
+  <text x="1046" y="623" class="small" text-anchor="middle" font-weight="700" fill="#8A4B08">Pending Effect</text>
+  <text x="1046" y="650" class="small" text-anchor="middle">reserve_hotel</text>
+  <text x="1046" y="667" class="small" text-anchor="middle">(...)</text>
+
+  <path d="M295 638 H380" class="edge" stroke="#7B8794" marker-end="url(#arrow-gray)"/>
+  <text x="337" y="627" class="label" fill="#44546A" text-anchor="middle">tool events</text>
+  <path d="M600 638 H670" class="edge" stroke="#7B8794" marker-end="url(#arrow-gray)"/>
+  <text x="635" y="627" class="label" fill="#44546A" text-anchor="middle">record</text>
+  <path d="M985 638 H995" class="edge" stroke="#D9822B" marker-end="url(#arrow-orange)"/>
+
+  <rect x="1160" y="285" width="270" height="170" class="card" fill="#E8F5E9" stroke="#4C9560" stroke-width="3"/>
+  <text x="1295" y="322" class="section" fill="#245C36" text-anchor="middle">③ Proof Verifier</text>
+  <text x="1295" y="358" class="body" text-anchor="middle"><tspan x="1295">Bind IR symbols to runtime facts</tspan><tspan x="1295" dy="24">Check provenance · guards</tspan><tspan x="1295" dy="24">versions · effects</tspan></text>
+
+  <path d="M985 285 H1120 V335 H1160" class="edge" stroke="#2F6DB5" marker-end="url(#arrow-blue)"/>
+  <text x="1090" y="273" class="label" fill="#174A8B" text-anchor="middle">proof obligations</text>
+  <path d="M985 590 H1135 V420 H1160" class="edge" stroke="#7B8794" marker-end="url(#arrow-gray)"/>
+  <text x="1092" y="577" class="label" fill="#44546A" text-anchor="middle">runtime evidence</text>
+  <path d="M1098 638 H1145 V445 H1160" class="edge" stroke="#D9822B" marker-end="url(#arrow-orange)"/>
+
+  <rect x="1182" y="480" width="226" height="64" rx="10" fill="#F3FBF5" stroke="#8BC49A" stroke-dasharray="6 5"/>
+  <text x="1295" y="505" class="small" text-anchor="middle" fill="#245C36">$rating ← call_12.rating = 4.2</text>
+  <text x="1295" y="529" class="small" text-anchor="middle" fill="#245C36">4.2 &gt; 4  ✓</text>
+
+  <rect x="1155" y="605" width="120" height="70" class="card" fill="#DFF3E4" stroke="#3A8D50"/>
+  <text x="1215" y="635" class="card-title" text-anchor="middle" fill="#1F6A35">PROVED</text><text x="1215" y="658" class="small" text-anchor="middle">Execute</text>
+  <rect x="1290" y="605" width="145" height="70" class="card" fill="#FFF2CC" stroke="#D6A100"/>
+  <text x="1362" y="635" class="card-title" text-anchor="middle" fill="#7A5A00">UNKNOWN</text><text x="1362" y="658" class="small" text-anchor="middle">Local audit / confirm</text>
+  <rect x="1450" y="605" width="105" height="70" class="card" fill="#FDE2E1" stroke="#C94C4C"/>
+  <text x="1502" y="635" class="card-title" text-anchor="middle" fill="#8B2D2D">DENIED</text><text x="1502" y="658" class="small" text-anchor="middle">Block</text>
+
+  <path d="M1255 455 V575 H1215 V605" class="edge" stroke="#3A8D50" marker-end="url(#arrow-green)"/>
+  <path d="M1295 455 V605" class="edge" stroke="#D6A100" marker-end="url(#arrow-yellow)"/>
+  <path d="M1335 455 V575 H1502 V605" class="edge" stroke="#C94C4C" marker-end="url(#arrow-red)"/>
+
+  <rect x="1160" y="720" width="395" height="82" class="card" fill="#F6F0FA" stroke="#8E63B0"/>
+  <text x="1180" y="749" class="card-title" fill="#5D3A78">Long-range authorization check</text>
+  <text x="1180" y="778" class="body">Effect ← parameter ← state@v3 ← authorized UPDATE?</text>
+  <path d="M1295 544 V690 H1358 V720" class="edge dash" stroke="#8E63B0" marker-end="url(#arrow-gray)"/>
+
+  <text x="800" y="858" class="subtitle" text-anchor="middle">The compiler specifies what must be proved; the Agent remains free to choose how to execute.</text>
+</svg>

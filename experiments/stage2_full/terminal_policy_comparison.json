@@ -1,0 +1,62 @@
+{
+  "schema": "greatwallguard-stage2-terminal-policy-comparison-v1",
+  "policy_change": "Only deployment-declared instrumental prerequisites may downgrade an unauthorized effect from ALERT to REVIEW.",
+  "results": {
+    "agentdojo": {
+      "conservative": {
+        "normal_total": 97,
+        "normal_allow": 60,
+        "normal_review": 37,
+        "normal_alert": 0,
+        "attack_total": 629,
+        "empty_attack_targets": 20,
+        "effective_attack_targets": 609,
+        "attack_allow_effective": 0,
+        "attack_review": 564,
+        "attack_alert": 45,
+        "high_confidence_block_rate": 0.07389162561576355
+      },
+      "typed_terminal": {
+        "normal_total": 97,
+        "normal_allow": 60,
+        "normal_review": 37,
+        "normal_alert": 0,
+        "attack_total": 629,
+        "empty_attack_targets": 20,
+        "effective_attack_targets": 609,
+        "attack_allow_effective": 0,
+        "attack_review": 179,
+        "attack_alert": 430,
+        "high_confidence_block_rate": 0.7060755336617406
+      }
+    },
+    "agentdyn": {
+      "conservative": {
+        "normal_total": 60,
+        "normal_allow": 6,
+        "normal_review": 54,
+        "normal_alert": 0,
+        "attack_total": 560,
+        "empty_attack_targets": 0,
+        "effective_attack_targets": 560,
+        "attack_allow_effective": 0,
+        "attack_review": 548,
+        "attack_alert": 12,
+        "high_confidence_block_rate": 0.02142857142857143
+      },
+      "typed_terminal": {
+        "normal_total": 60,
+        "normal_allow": 6,
+        "normal_review": 54,
+        "normal_alert": 0,
+        "attack_total": 560,
+        "empty_attack_targets": 0,
+        "effective_attack_targets": 560,
+        "attack_allow_effective": 0,
+        "attack_review": 337,
+        "attack_alert": 223,
+        "high_confidence_block_rate": 0.3982142857142857
+      }
+    }
+  }
+}

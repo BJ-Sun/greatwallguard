@@ -16,47 +16,72 @@ Agent 工具调用 ──→ ALLOW / ALERT / REVIEW
 
 ## 当前状态
 
-- 已形成可直接接入 Agent 工具网关的 Programmatic Core v0.1；
-- 已在 570 条轨迹、5,674 次工具调用上完成回归，模块化前后判定差异为 0；
-- 258 条具有明确目标调用的攻击中，63 条高置信告警，195 条进入复核；
-- 265 条正常任务中没有高置信误报，79 条进入复核；
-- 当前重点是降低 `REVIEW` 中的正常任务比例，而不是继续堆叠正则规则。
+- 已实现“自然语言授权编译 → 运行时关系证明”的前两阶段原型；
+- AgentDyn 两组未见任务上，授权编译联合正确率分别为 9/12 和 10/12；
+- 阶段二已形成无 LLM 的在线证明内核，覆盖字段来源、范围传播、有限关系算子、动态预算和状态版本；
+- 最新类型化效果策略只允许部署契约声明的中间能力降级复核，未经授权的新增终端效果直接告警；
+- AgentDojo 全量回放：正常任务 `60 Allow / 37 Review / 0 Alert`；609 个有实际目标动作的攻击组合 `0 Allow / 179 Review / 430 Alert`；
+- AgentDyn 全量回放：正常任务 `6 Allow / 54 Review / 0 Alert`；560 个攻击组合 `0 Allow / 337 Review / 223 Alert`；
+- 相比保守策略，高置信攻击阻断率分别从 7.4% 提升到 70.6%、从 2.1% 提升到 39.8%，正常硬误报仍为 0；`Review` 不计作攻击检出；
+- 阶段三已完成 638 个语义未决调用的全量审计；第一版虽然保持攻击直接放行为 0，但产生 22/157 个正常硬告警；
+- 最新三态证明要求 LLM 区分 `SUPPORTED / CONTRADICTED / INSUFFICIENT`，并由程序校验有限冲突证书；正常硬告警降至 **1/157（0.64%）**，攻击直接放行仍为 0；
+- 当前限制是冲突证书中的操作数尚未全部绑定到授权 DAG 和执行图的具体节点，因此证据不足的调用仍保留 `REVIEW`。
 
 ## 快速使用
 
 ```python
-from greatwallguard import ProgrammaticAuthorizationGuard
+from greatwallguard import GreatWallGuardMethod
 
-guard = ProgrammaticAuthorizationGuard()
-guard.on_user_message(user_text, turn=turn, trusted=True)
-
-decision = guard.before_tool_call(
-    tool_name,
-    arguments,
-    turn=turn,
-    call_id=call_id,
+method = GreatWallGuardMethod(
+    effect_contracts=effect_contracts,
+    observation_tools=observation_tools,
+    intent_backend=intent_backend,
+    observation_contracts=observation_contracts,
+    capability_rules=capability_rules,
 )
+runtime = method.start_task(trusted_user_message)
 
-guard.after_tool_result(call_id, succeeded=not tool_error)
+decision = runtime.authorize_tool_call(
+    call_id, tool_name, arguments, read_only=is_observation,
+)
+if decision.verdict == "allow":
+    result = execute_tool(tool_name, arguments)
+    runtime.commit_tool_result(call_id, succeeded=tool_succeeded(result), result=result)
 ```
 
-- `allow`：调用与尚未消费的明确授权一致；
-- `alert`：没有对应授权，或关键参数明确冲突；
-- `review`：工具影响、参数来源或授权语义仍不充分。
+- `allow`：调用已获得完整授权证明；
+- `alert`：效果、参数、约束、预算或范围存在明确冲突；
+- `review`：来源、动态次数、中间能力或语义证据仍不充分。
 
-完整接口、状态恢复和适配原则见 [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)。
+当前方法、在线生命周期和实验边界见[三阶段运行时授权方法](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)。
 
 ## 文档索引
 
 ### 1. 新成员首先阅读
 
-1. [方法总览与协作入口](docs/METHOD_OVERVIEW_AND_HANDOFF.md)：研究问题、方法边界、相关工作定位、实验结论与任务分工。
-2. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：可直接使用的程序接口和跨 benchmark 适配规则。
-3. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：论文问题、威胁模型和状态版本研究主线。
+1. [三阶段运行时授权方法与实验结论](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)：当前唯一的方法主文档，说明三个阶段为何需要、如何实现、验证到哪一步。
+2. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
+3. [显式委托与类型化复核](docs/DELEGATION_TYPED_REVIEW_EVALUATION.md)：委托数据结构、三类 REVIEW、双基准回归和第三阶段全量清单。
+4. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
+5. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
+6. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
+7. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+8. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+9. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
 - [AgentDojo 小规模固定轨迹实验](docs/AGENTDOJO_PROGRAMMATIC_V01.md)：6组官方任务揭示同工具、动态参数场景中的误报边界。
+- [AgentDojo 符号授权阶段 A](docs/AGENTDOJO_SYMBOLIC_STAGE_A.md)：人工授权验证表示和匹配器的区分能力。
+- [AgentDojo 自动授权阶段 B](docs/AGENTDOJO_SYMBOLIC_STAGE_B.md)：自动编译结果及“授权不应等同于唯一计划”的发现。
+- [AgentDojo 事实图—关系授权桥接](docs/AGENTDOJO_BEHAVIOR_GRAPH_RELATION_BRIDGE.md)：真实工具返回如何进入现有事实图，并区分程序证据与候选语义。
+- [AgentDojo 全量程序化授权基线](docs/AGENTDOJO_PROGRAMMATIC_FULL_V01.md)：97 个正常任务与 609 个有效攻击组合的无 LLM 评估及错误归因。
+- [结构化效果授权 v0.5](docs/STRUCTURED_EFFECT_AUTHORIZATION_V05.md)：将动态参数从“未授权”中分离，消除冻结样本中的高置信正常误报，并给出下一步事实图验证集合。
+- [通用 Schema-Grounded 授权 v0.7](docs/SCHEMA_GROUNDED_AUTHORIZATION_V07.md)：以有限效果本体和工具契约替代逐任务规则，并在全量 AgentDojo 上验证其能力边界。
+- [运行时参数溯源 v1.1](docs/RUNTIME_PARAMETER_PROVENANCE_V09.md)：在 97 个真实执行的正常任务及 609 个攻击对照上，以可重放关系证明动态参数，评估纯程序化方法的进一步上限。
+- [AgentDojo 最新正常任务复核归因](docs/AGENTDOJO_NORMAL_REVIEW_TAXONOMY_V27.md)：分析剩余36个复核任务，区分程序关系、内容语义、开放委托及评测/契约问题。
+- [冻结算子与泛化验证](docs/method-motivation/06_FROZEN_OPERATOR_GENERALIZATION.md)：审计现有算子的任务复用范围，并规定未见任务上的前瞻验证协议。
+- [AgentDojo 邮件计划无关实验](docs/AGENTDOJO_EMAIL_PLAN_INVARIANCE.md)：两条合法路径、无关来源与证据不足的关系证明对照。
 - [程序化规则完善实验](docs/PROGRAMMATIC_RULE_COMPLETION_V1.md)：补齐工具契约后的实测结论。
 - [第一版大规模授权实验](docs/LARGE_SCALE_AUTHORIZATION_V0.md)：570 条轨迹的实验口径与详细分析。
 - [在线 Effect Guard 试验](docs/ONLINE_EFFECT_GUARD_PILOT.md)：调用前检查接口的早期验证。
@@ -91,13 +116,22 @@ guard.after_tool_result(call_id, succeeded=not tool_error)
 
 | 路径 | 用途 |
 |---|---|
-| `src/greatwallguard/programmatic_guard.py` | 当前公开授权检查模块 |
+| `src/greatwallguard/programmatic_guard.py` | 早期基线兼容模块 |
+| `src/greatwallguard/method.py` | 当前方法的统一公开入口 |
+| `src/greatwallguard/authorization_runtime.py` | 有状态在线授权、预算、撤销与快照 |
+| `src/greatwallguard/authorization_dag.py` | 授权 DAG 与调用前验证器 |
+| `src/greatwallguard/dag_evidence_evaluator.py` | 有限来源、变换与约束求值 |
+| `src/greatwallguard/relational_authorization.py` | 计划无关的关系授权验证器 |
+| `src/greatwallguard/relation_proof.py` | 执行事实与可重放证明规则 |
+| `src/greatwallguard/semantic_audit.py` | 三态语义证明与有限冲突证书校验 |
 | `src/greatwallguard/authorization_rules.py` | 结构化授权、账本和参数绑定原型 |
 | `src/greatwallguard/native_openclaw_graph.py` | OpenClaw 原生事件建图 |
 | `experiments/large_scale_authorization_v1.py` | 570 条轨迹回放 |
 | `experiments/large_scale_authorization_v1_results.json` | 冻结逐 case 结果 |
 | `experiments/large_scale_semantic_audit_v0.py` | REVIEW 样本的局部语义审计 |
 | `tests/test_programmatic_guard.py` | 模块公开接口测试 |
+| `experiments/stage3_conflict_certificate_eval.py` | 阶段三 v2 全量负例复核实验 |
+| `experiments/stage3_conflict_certificate/` | 调用级与任务级冻结结果 |
 
 ## 运行测试
 
@@ -113,4 +147,4 @@ python3 -m unittest discover -s experiments -p 'test_*.py'
 
 ## 下一步
 
-保持 Programmatic Core v0.1 不变，优先接入 AgentDojo：先对固定轨迹测试跨数据集泛化，再进行少量真实重放。之后针对 `REVIEW` 分别补充授权提取、参数来源、状态版本和选择性 LLM 审计，并同时报告攻击检出、正常误报和审计成本。
+把冲突证书的 `actual_value` 和 `authorized_value_or_constraint` 分别绑定到执行图节点和授权 DAG 节点；只有两端均可追溯、有限关系可复算的证书才能触发高置信阻断。其余语义未决项保持 `REVIEW`，不通过 benchmark 专用规则提高表面检出率。
