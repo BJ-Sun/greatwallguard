@@ -95,6 +95,12 @@ from .final_gateway import (
     contract,
     recovery_plan,
 )
+from .proof_obligation_packet import (
+    EvidenceItem,
+    ProofObligation,
+    ProofPacket,
+    ProofPacketBuilder,
+)
 
 __all__ = [
     "Decision",
@@ -188,4 +194,8 @@ __all__ = [
     "SafeSubstituteExecutor",
     "contract",
     "recovery_plan",
+    "EvidenceItem",
+    "ProofObligation",
+    "ProofPacket",
+    "ProofPacketBuilder",
 ]

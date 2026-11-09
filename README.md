@@ -24,9 +24,9 @@ Agent 工具调用 ──→ ALLOW / ALERT / REVIEW
 - AgentDyn 全量回放：正常任务 `6 Allow / 54 Review / 0 Alert`；560 个攻击组合 `0 Allow / 337 Review / 223 Alert`；
 - 相比保守策略，高置信攻击阻断率分别从 7.4% 提升到 70.6%、从 2.1% 提升到 39.8%，正常硬误报仍为 0；`Review` 不计作攻击检出；
 - 阶段三已完成 638 个语义未决调用的全量审计；第一版虽然保持攻击直接放行为 0，但产生 22/157 个正常硬告警；
-- 最新三态证明要求 LLM 区分 `SUPPORTED / CONTRADICTED / INSUFFICIENT`，并由程序校验有限冲突证书；正常硬告警降至 **1/157（0.64%）**，攻击直接放行仍为 0；
-- 终局网关已将内部不确定性收敛为“原操作、安全替代、拒绝或确认”，全量策略回放中最终 `REVIEW` 为 0、用户确认为 0；正常原操作执行率 64.3%，另有 35.0% 转为安全替代；
-- 当前限制是冲突证书中的操作数尚未全部绑定到授权 DAG 和执行图的具体节点，因此证据不足的调用仍保留 `REVIEW`。
+- 阶段三将复核原因编译为原子证明义务，并从执行图切出局部证据交给 LLM；全量结果中正常任务自动放行达到 **119/157（75.8%）**，有效攻击直接放行为 **0/1,169**；
+- 有效攻击中 875/1,169（74.9%）形成高置信告警，294 条保持证据不足，不把 `Review` 冒充攻击检出；
+- 当前限制是 34 个正常任务仍缺少可关闭证明义务的事实；下一步接入由 `missing_fact + suggested_query` 驱动的只读补证或局部重放。
 
 ## 快速使用
 
@@ -66,10 +66,11 @@ if decision.verdict == "allow":
 4. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
 5. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
 6. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
-7. [收敛后的终局授权方法](docs/FINAL_CONVERGED_METHOD.md)：取消最终 REVIEW、降低用户确认、效果安全替代与最终实验结果。
-8. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-9. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-10. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+7. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
+8. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
+9. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+10. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+11. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
@@ -126,6 +127,7 @@ if decision.verdict == "allow":
 | `src/greatwallguard/relational_authorization.py` | 计划无关的关系授权验证器 |
 | `src/greatwallguard/relation_proof.py` | 执行事实与可重放证明规则 |
 | `src/greatwallguard/semantic_audit.py` | 三态语义证明与有限冲突证书校验 |
+| `src/greatwallguard/proof_obligation_packet.py` | 原子证明义务与执行图证据切片 |
 | `src/greatwallguard/final_gateway.py` | 自动补证与无 REVIEW 的终局效果处置 |
 | `src/greatwallguard/authorization_rules.py` | 结构化授权、账本和参数绑定原型 |
 | `src/greatwallguard/native_openclaw_graph.py` | OpenClaw 原生事件建图 |
@@ -135,6 +137,8 @@ if decision.verdict == "allow":
 | `tests/test_programmatic_guard.py` | 模块公开接口测试 |
 | `experiments/stage3_conflict_certificate_eval.py` | 阶段三 v2 全量负例复核实验 |
 | `experiments/stage3_conflict_certificate/` | 调用级与任务级冻结结果 |
+| `experiments/stage3_proof_obligation_eval.py` | 阶段三证明义务全量实验 |
+| `experiments/stage3_proof_obligation/` | 最新调用级与任务级冻结结果 |
 
 ## 运行测试
 
@@ -150,4 +154,4 @@ python3 -m unittest discover -s experiments -p 'test_*.py'
 
 ## 下一步
 
-把冲突证书的 `actual_value` 和 `authorized_value_or_constraint` 分别绑定到执行图节点和授权 DAG 节点；只有两端均可追溯、有限关系可复算的证书才能触发高置信阻断。其余语义未决项保持 `REVIEW`，不通过 benchmark 专用规则提高表面检出率。
+把审计输出的 `missing_fact + suggested_query` 接入真实只读补证或局部重放；检验新增事实能否关闭正常任务的证明义务，同时保持攻击 `SUPPORTED=0`。其余语义未决项保持 `REVIEW`，不通过 benchmark 专用规则提高表面检出率。
