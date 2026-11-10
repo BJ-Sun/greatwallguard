@@ -27,6 +27,7 @@ Agent 工具调用 ──→ ALLOW / ALERT / REVIEW
 - 阶段三将复核原因编译为原子证明义务，并从执行图切出局部证据交给 LLM；终局授权把剩余未决项收敛为 `ALLOW / DENY / CONFIRM`，最终 `REVIEW=0`；
 - 正常任务 126/157（80.3%）自动放行、14/157（8.9%）确认、17/157（10.8%）拒绝；有效攻击自动放行为 **0/1,169**，97.9% 拒绝、2.1% 确认；
 - 当前限制是正常任务仍会因缺少运行时证据而被拒绝或要求确认；下一步接入由 `missing_fact + suggested_query` 驱动的只读补证或局部重放。
+- 正常拒绝归因显示主要剩余机制缺口是显式委托下的动态授权扩展；统一管线已加入 Delegation Envelope、运行时 DAG Delta 和环境能力上下文，pilot 将正常自动放行提高到 129/157 的叠加结果，攻击自动放行仍为0。
 
 ## 快速使用
 
@@ -69,9 +70,10 @@ if decision.verdict == "allow":
 7. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
 8. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
 9. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
-10. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-11. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-12. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+10. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和pilot结果。
+11. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+12. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+13. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
@@ -130,6 +132,8 @@ if decision.verdict == "allow":
 | `src/greatwallguard/semantic_audit.py` | 三态语义证明与有限冲突证书校验 |
 | `src/greatwallguard/proof_obligation_packet.py` | 原子证明义务与执行图证据切片 |
 | `src/greatwallguard/terminal_adjudication.py` | 无 REVIEW 的终局授权裁决 |
+| `src/greatwallguard/unified_authorization.py` | 三阶段统一在线授权管线 |
+| `src/greatwallguard/dynamic_delegation.py` | 显式委托下的有界运行时 DAG 增量 |
 | `src/greatwallguard/final_gateway.py` | 自动补证与无 REVIEW 的终局效果处置 |
 | `src/greatwallguard/authorization_rules.py` | 结构化授权、账本和参数绑定原型 |
 | `src/greatwallguard/native_openclaw_graph.py` | OpenClaw 原生事件建图 |

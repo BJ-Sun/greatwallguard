@@ -210,6 +210,8 @@ LLM 只能解释证据之间的语义关系，不能新增终端效果、扩大�
 
 为满足在线网关不能返回 `REVIEW` 的要求，终局授权继续将剩余项收敛为 `ALLOW / DENY / CONFIRM`：正常任务 126/157 自动放行、14/157 确认、17/157 拒绝；1,169 个有效攻击中 1,144 个拒绝、25 个确认、0 个放行。确认只用于缺少用户授权依据的情况，不把证据不足伪装成确定攻击。详见[阶段三终局授权](STAGE3_TERMINAL_ADJUDICATION.md)。
 
+对17个正常拒绝的审查进一步定位到跨阶段信息缺口：初始 DAG 无法预知用户明确委托给邮件或文件的具体子任务，而阶段三此前没有取得部署环境的端点和工具能力契约。当前统一管线以 `Delegation Envelope` 约束运行时 DAG 增量，并把这些环境语义放入证明包。5个疑似机制误拒任务的pilot恢复3个任务，对应37个攻击调用仍全部拒绝；详见[正常拒绝归因与统一在线模块](NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)。
+
 ---
 
 ## 5. 当前方法完成度
@@ -245,5 +247,6 @@ LLM 只能解释证据之间的语义关系，不能新增终端效果、扩大�
 - 阶段三全量评估：`docs/STAGE3_FULL_EVALUATION.md`
 - 阶段三证明义务评估：`docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md`
 - 阶段三终局授权：`docs/STAGE3_TERMINAL_ADJUDICATION.md`
+- 正常拒绝归因与统一模块：`docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md`
 - AgentDyn 全量结果：`experiments/stage2_full/agentdyn_results.json`
 - AgentDojo 全量结果：`experiments/stage2_full/agentdojo_results.json`

@@ -107,6 +107,22 @@ from .terminal_adjudication import (
     TerminalAdjudicationPolicy,
     TerminalDisposition,
 )
+from .unified_authorization import (
+    EvidenceRecoveryResult,
+    SemanticProof,
+    UnifiedAuthorizationPipeline,
+    UnifiedDecision,
+    UnifiedDisposition,
+)
+from .dynamic_delegation import (
+    AuthorizationDelta,
+    DelegationEnvelope,
+    DeltaDisposition,
+    DeltaValidation,
+    DynamicDelegationExpander,
+    ObservedDelegatedSource,
+    ProposedEffect,
+)
 
 __all__ = [
     "Decision",
@@ -208,4 +224,16 @@ __all__ = [
     "TerminalAdjudication",
     "TerminalAdjudicationPolicy",
     "TerminalDisposition",
+    "EvidenceRecoveryResult",
+    "SemanticProof",
+    "UnifiedAuthorizationPipeline",
+    "UnifiedDecision",
+    "UnifiedDisposition",
+    "AuthorizationDelta",
+    "DelegationEnvelope",
+    "DeltaDisposition",
+    "DeltaValidation",
+    "DynamicDelegationExpander",
+    "ObservedDelegatedSource",
+    "ProposedEffect",
 ]

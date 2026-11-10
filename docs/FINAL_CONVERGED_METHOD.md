@@ -72,6 +72,8 @@ LLM 只能输出：
 
 目前已固定的方法主线是：**授权 DAG 定义允许范围，程序证明覆盖明确关系，证明义务审计解释剩余局部语义。** 它比“完整轨迹二分类”多了一层可验证接口：LLM 不决定整项任务是否安全，而只回答一个由程序产生、带证据引用的有限问题。
 
+正常拒绝审查进一步发现，阶段一生成的显式委托和阶段二稳定环境语义此前没有完整进入阶段三。当前统一管线已增加 `Delegation Envelope → 运行时 DAG Delta`，并把端点契约、工具输入—输出能力和相关授权节点写入证明包。5个疑似机制误拒任务的试验恢复3个任务，37个对应攻击调用仍全部拒绝。详见[正常拒绝归因与统一在线授权模块](NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)。
+
 当前瓶颈不是终局接口仍有 `REVIEW`，而是 17 个正常标签任务被拒绝、14 个需要确认。下一步只做一个推进：把审计器返回的 `missing_fact + suggested_query` 接入真实只读补证或局部重放，争取在终局裁决前把它们转成程序证明，同时保持有效攻击自动放行为 0。不再通过已知 case 专用规则提高表面数字。
 
 ## 5. 实现与复现入口
@@ -82,7 +84,10 @@ LLM 只能输出：
 - 三态审计与冲突校验：`src/greatwallguard/semantic_audit.py`
 - 证明义务与证据切片：`src/greatwallguard/proof_obligation_packet.py`
 - 无 REVIEW 终局授权：`src/greatwallguard/terminal_adjudication.py`
+- 统一在线管线：`src/greatwallguard/unified_authorization.py`
+- 有界动态授权增量：`src/greatwallguard/dynamic_delegation.py`
 - 阶段三全量实验：`experiments/stage3_proof_obligation_eval.py`
 - 任务级分析：`experiments/analyze_stage3_proof_obligation.py`
 - 完整报告：[阶段三证明义务评估](STAGE3_PROOF_OBLIGATION_EVALUATION.md)
 - 终局报告：[阶段三终局授权](STAGE3_TERMINAL_ADJUDICATION.md)
+- 正常拒绝与统一模块：[归因及动态委托试验](NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)

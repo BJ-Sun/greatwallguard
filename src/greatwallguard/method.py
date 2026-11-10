@@ -1,4 +1,4 @@
-"""Single public facade for GreatWallGuard stages one and two."""
+"""Single public facade for the complete GreatWallGuard pipeline."""
 
 from __future__ import annotations
 
@@ -10,10 +10,13 @@ from .intent_dag_compiler import (
     ConstrainedIntentDAGCompiler, IntentCompilerBackend, ObservationTool,
 )
 from .schema_grounded_authorization import EffectContract
+from .unified_authorization import (
+    EvidenceResolver, ProofAuditor, TerminalAuditor, UnifiedAuthorizationPipeline,
+)
 
 
 class GreatWallGuardMethod:
-    """Compile trusted intent and create a stateful online authorization runtime."""
+    """Compile trusted intent and construct online proof and terminal stages."""
 
     def __init__(self, *, effect_contracts: Iterable[EffectContract],
                  observation_tools: Iterable[ObservationTool],
@@ -55,3 +58,17 @@ class GreatWallGuardMethod:
     @staticmethod
     def restore_task(snapshot) -> AuthorizationRuntime:
         return AuthorizationRuntime.from_snapshot(snapshot)
+
+    @staticmethod
+    def build_terminal_pipeline(
+        *,
+        proof_auditor: ProofAuditor,
+        evidence_resolver: EvidenceResolver,
+        terminal_auditor: TerminalAuditor,
+    ) -> UnifiedAuthorizationPipeline:
+        """Bind deployment adapters to the no-REVIEW authorization pipeline."""
+        return UnifiedAuthorizationPipeline(
+            proof_auditor=proof_auditor,
+            evidence_resolver=evidence_resolver,
+            terminal_auditor=terminal_auditor,
+        )

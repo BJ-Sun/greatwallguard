@@ -74,9 +74,10 @@ class ProofPacket:
     obligation: ProofObligation
     evidence: tuple[EvidenceItem, ...]
     omitted_evidence_refs: tuple[str, ...] = ()
+    authorization_context: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        value = {
             "trusted_authorization": {
                 "ref": "trusted_user_request",
                 "user_request": self.trusted_user_request,
@@ -87,6 +88,9 @@ class ProofPacket:
             "evidence": [item.to_dict() for item in self.evidence],
             "omitted_evidence_count": len(self.omitted_evidence_refs),
         }
+        if self.authorization_context:
+            value["authorization_context"] = dict(self.authorization_context)
+        return value
 
 
 def _get_path(arguments: Mapping[str, Any], field: str | None) -> Any:
@@ -150,6 +154,7 @@ class ProofPacketBuilder:
         review_field: str | None,
         execution_prefix: Sequence[Mapping[str, Any]],
         expand_all: bool = False,
+        authorization_context: Mapping[str, Any] | None = None,
     ) -> ProofPacket:
         tool = str(pending_call["tool"])
         arguments = pending_call.get("arguments") or {}
@@ -191,4 +196,5 @@ class ProofPacketBuilder:
             ),
             evidence=selected,
             omitted_evidence_refs=omitted,
+            authorization_context=dict(authorization_context or {}),
         )
