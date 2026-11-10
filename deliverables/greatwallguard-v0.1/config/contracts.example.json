@@ -1,0 +1,32 @@
+{
+  "effect_contracts": [
+    {
+      "tool": "send_email",
+      "effect_class": "external_message",
+      "critical_fields": ["recipients", "subject", "body", "attachments"]
+    }
+  ],
+  "observation_contracts": [
+    {"tool": "read_file", "mode": "passive"},
+    {"tool": "browse_webpage", "mode": "outbound"}
+  ],
+  "endpoint_contracts": [
+    {
+      "host": "business.example.com",
+      "purpose": "documented business workflow",
+      "source": "deployment_configuration"
+    }
+  ],
+  "capability_rules": [
+    {
+      "prerequisite_tool": "download_file",
+      "terminal_tool": "send_email",
+      "links": [{"prerequisite_field": "path", "terminal_field": "attachments"}]
+    }
+  ],
+  "terminal_policy": {
+    "deny_bases": ["new_effect", "scope_escape", "condition_conflict"],
+    "missing_authority": "confirm",
+    "model_failure": "deny"
+  }
+}

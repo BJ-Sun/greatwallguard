@@ -1,0 +1,17 @@
+{
+  "name": "greatwallguard",
+  "release": "0.1.0-research",
+  "status": "frozen research prototype",
+  "public_api": [
+    "GreatWallGuardMethod",
+    "UnifiedAuthorizationPipeline",
+    "AuthorizationRuntime",
+    "ProofPacketBuilder",
+    "DynamicDelegationExpander",
+    "JsonProofAuditor",
+    "CallableEvidenceResolver",
+    "JsonTerminalAuditor"
+  ],
+  "terminal_dispositions": ["allow", "deny", "confirm"],
+  "review_is_terminal": false
+}

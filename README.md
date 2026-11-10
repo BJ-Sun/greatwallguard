@@ -2,6 +2,8 @@
 
 GreatWallGuard 研究动态、长程 LLM Agent 中的运行时授权：先从可信用户指令提取结构化授权，再在工具执行前检查操作、对象和关键参数；程序证据不足的调用进入来源、状态版本或局部 LLM 审计。
 
+当前固定交付版入口：[GreatWallGuard v0.1 交付包](deliverables/greatwallguard-v0.1/README.md)。新成员、benchmark 适配和真实 Agent 集成应从该目录开始，不再从历史实验脚本拼装方法。
+
 ```text
 可信用户指令 + 工具环境
           ↓

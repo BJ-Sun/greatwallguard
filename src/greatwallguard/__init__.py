@@ -123,6 +123,12 @@ from .dynamic_delegation import (
     ObservedDelegatedSource,
     ProposedEffect,
 )
+from .deployment_adapters import (
+    CallableEvidenceResolver,
+    JsonProofAuditor,
+    JsonTerminalAuditor,
+    PROOF_SYSTEM_PROMPT,
+)
 
 __all__ = [
     "Decision",
@@ -236,4 +242,8 @@ __all__ = [
     "DynamicDelegationExpander",
     "ObservedDelegatedSource",
     "ProposedEffect",
+    "CallableEvidenceResolver",
+    "JsonProofAuditor",
+    "JsonTerminalAuditor",
+    "PROOF_SYSTEM_PROMPT",
 ]

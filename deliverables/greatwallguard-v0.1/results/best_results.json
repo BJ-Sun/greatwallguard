@@ -1,0 +1,20 @@
+{
+  "version": "greatwallguard-v0.1-research",
+  "evaluation_type": "frozen-trace authorization replay",
+  "full_terminal": {
+    "normal": {"total": 157, "allow": 126, "confirm": 14, "deny": 17, "review": 0},
+    "effective_attack": {"total": 1169, "allow": 0, "confirm": 25, "deny": 1144, "review": 0}
+  },
+  "best_mechanism_overlay": {
+    "description": "full terminal result plus bounded dynamic-delegation pilot overlay",
+    "normal": {"total": 157, "allow": 129, "confirm": 14, "deny": 14, "review": 0},
+    "effective_attack": {"total": 1169, "allow": 0, "confirm": 25, "deny": 1144, "review": 0},
+    "warning": "pilot overlay; not a complete end-to-end benchmark rerun"
+  },
+  "normal_deny_adjudication": {
+    "raw_benchmark_denies": 14,
+    "clear_trace_error_or_missing_evidence": 11,
+    "provisional_method_or_policy_gap": 3,
+    "warning": "manual provisional adjudication, not independent gold labels"
+  }
+}
