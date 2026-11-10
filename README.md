@@ -24,9 +24,9 @@ Agent 工具调用 ──→ ALLOW / ALERT / REVIEW
 - AgentDyn 全量回放：正常任务 `6 Allow / 54 Review / 0 Alert`；560 个攻击组合 `0 Allow / 337 Review / 223 Alert`；
 - 相比保守策略，高置信攻击阻断率分别从 7.4% 提升到 70.6%、从 2.1% 提升到 39.8%，正常硬误报仍为 0；`Review` 不计作攻击检出；
 - 阶段三已完成 638 个语义未决调用的全量审计；第一版虽然保持攻击直接放行为 0，但产生 22/157 个正常硬告警；
-- 阶段三将复核原因编译为原子证明义务，并从执行图切出局部证据交给 LLM；全量结果中正常任务自动放行达到 **119/157（75.8%）**，有效攻击直接放行为 **0/1,169**；
-- 有效攻击中 875/1,169（74.9%）形成高置信告警，294 条保持证据不足，不把 `Review` 冒充攻击检出；
-- 当前限制是 34 个正常任务仍缺少可关闭证明义务的事实；下一步接入由 `missing_fact + suggested_query` 驱动的只读补证或局部重放。
+- 阶段三将复核原因编译为原子证明义务，并从执行图切出局部证据交给 LLM；终局授权把剩余未决项收敛为 `ALLOW / DENY / CONFIRM`，最终 `REVIEW=0`；
+- 正常任务 126/157（80.3%）自动放行、14/157（8.9%）确认、17/157（10.8%）拒绝；有效攻击自动放行为 **0/1,169**，97.9% 拒绝、2.1% 确认；
+- 当前限制是正常任务仍会因缺少运行时证据而被拒绝或要求确认；下一步接入由 `missing_fact + suggested_query` 驱动的只读补证或局部重放。
 
 ## 快速使用
 
@@ -68,9 +68,10 @@ if decision.verdict == "allow":
 6. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
 7. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
 8. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
-9. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-10. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-11. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+9. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
+10. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+11. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+12. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
@@ -128,6 +129,7 @@ if decision.verdict == "allow":
 | `src/greatwallguard/relation_proof.py` | 执行事实与可重放证明规则 |
 | `src/greatwallguard/semantic_audit.py` | 三态语义证明与有限冲突证书校验 |
 | `src/greatwallguard/proof_obligation_packet.py` | 原子证明义务与执行图证据切片 |
+| `src/greatwallguard/terminal_adjudication.py` | 无 REVIEW 的终局授权裁决 |
 | `src/greatwallguard/final_gateway.py` | 自动补证与无 REVIEW 的终局效果处置 |
 | `src/greatwallguard/authorization_rules.py` | 结构化授权、账本和参数绑定原型 |
 | `src/greatwallguard/native_openclaw_graph.py` | OpenClaw 原生事件建图 |
@@ -139,6 +141,7 @@ if decision.verdict == "allow":
 | `experiments/stage3_conflict_certificate/` | 调用级与任务级冻结结果 |
 | `experiments/stage3_proof_obligation_eval.py` | 阶段三证明义务全量实验 |
 | `experiments/stage3_proof_obligation/` | 最新调用级与任务级冻结结果 |
+| `experiments/stage3_terminal_adjudication/` | 终局调用级与任务级冻结结果 |
 
 ## 运行测试
 

@@ -101,6 +101,12 @@ from .proof_obligation_packet import (
     ProofPacket,
     ProofPacketBuilder,
 )
+from .terminal_adjudication import (
+    TERMINAL_SYSTEM_PROMPT,
+    TerminalAdjudication,
+    TerminalAdjudicationPolicy,
+    TerminalDisposition,
+)
 
 __all__ = [
     "Decision",
@@ -198,4 +204,8 @@ __all__ = [
     "ProofObligation",
     "ProofPacket",
     "ProofPacketBuilder",
+    "TERMINAL_SYSTEM_PROMPT",
+    "TerminalAdjudication",
+    "TerminalAdjudicationPolicy",
+    "TerminalDisposition",
 ]
