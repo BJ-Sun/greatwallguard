@@ -57,7 +57,7 @@ if decision.verdict == "allow":
 - `alert`：效果、参数、约束、预算或范围存在明确冲突；
 - `review`：来源、动态次数、中间能力或语义证据仍不充分。
 
-当前方法、在线生命周期和实验边界见[三阶段运行时授权方法](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)。
+当前方法按三个阶段分别说明：[授权编译](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
 
 ## 文档索引
 
@@ -66,19 +66,12 @@ if decision.verdict == "allow":
 1. [阶段一授权编译细节](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：五元组、Authorization IR、IR-to-DAG lowering 规则及贯穿案例。
 2. [阶段二运行时授权证明细节](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、逐层判定、REVIEW 分类及贯穿案例。
 3. [阶段三语义证明补全细节](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：原子证明义务、最小证据包、三态语义证明、冲突校验和终局处置。
-4. [三阶段运行时授权方法与实验结论](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)：方法形成过程中的递进设计、历史实验和实现入口。
-5. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
-6. [显式委托与类型化复核](docs/DELEGATION_TYPED_REVIEW_EVALUATION.md)：委托数据结构、三类 REVIEW、双基准回归和第三阶段全量清单。
-7. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
-8. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
-9. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
-10. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
-11. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
-12. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
-13. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和pilot结果。
-14. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-15. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-16. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+4. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
+5. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
+6. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
+7. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和 pilot 结果。
+8. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+9. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
@@ -95,7 +88,6 @@ if decision.verdict == "allow":
 - [AgentDojo 邮件计划无关实验](docs/AGENTDOJO_EMAIL_PLAN_INVARIANCE.md)：两条合法路径、无关来源与证据不足的关系证明对照。
 - [程序化规则完善实验](docs/PROGRAMMATIC_RULE_COMPLETION_V1.md)：补齐工具契约后的实测结论。
 - [第一版大规模授权实验](docs/LARGE_SCALE_AUTHORIZATION_V0.md)：570 条轨迹的实验口径与详细分析。
-- [在线 Effect Guard 试验](docs/ONLINE_EFFECT_GUARD_PILOT.md)：调用前检查接口的早期验证。
 - [用户授权提取计划](docs/USER_AUTHORIZATION_EXTRACTION_V0_PLAN.md)与[结果](docs/USER_AUTHORIZATION_EXTRACTION_V0_RESULTS.md)：规则与 LLM 提取的首轮实验。
 - [授权增量试验](docs/INTENT_DELTA_PILOT.md)：多轮追加、撤销和未绑定参数。
 

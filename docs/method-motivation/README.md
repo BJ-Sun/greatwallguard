@@ -57,7 +57,9 @@
 
 本目录用于论文故事线和方法动机。代码、完整实验口径与结构化结果仍以以下文档为准：
 
-- [三阶段运行时授权方法](../THREE_STAGE_AUTHORIZATION_METHOD.md)
+- [阶段一：授权编译](../STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)
+- [阶段二：运行时授权证明](../STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)
+- [阶段三：语义证明补全](../STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)
 - [AgentDojo 阶段 A](../AGENTDOJO_SYMBOLIC_STAGE_A.md)
 - [AgentDojo 阶段 B](../AGENTDOJO_SYMBOLIC_STAGE_B.md)
 - [邮件计划无关实验](../AGENTDOJO_EMAIL_PLAN_INVARIANCE.md)
