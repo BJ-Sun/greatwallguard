@@ -63,19 +63,22 @@ if decision.verdict == "allow":
 
 ### 1. 新成员首先阅读
 
-1. [三阶段运行时授权方法与实验结论](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)：当前唯一的方法主文档，说明三个阶段为何需要、如何实现、验证到哪一步。
-2. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
-3. [显式委托与类型化复核](docs/DELEGATION_TYPED_REVIEW_EVALUATION.md)：委托数据结构、三类 REVIEW、双基准回归和第三阶段全量清单。
-4. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
-5. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
-6. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
-7. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
-8. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
-9. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
-10. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和pilot结果。
-11. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-12. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
-13. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+1. [阶段一授权编译细节](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：五元组、Authorization IR、IR-to-DAG lowering 规则及贯穿案例。
+2. [阶段二运行时授权证明细节](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、逐层判定、REVIEW 分类及贯穿案例。
+3. [阶段三语义证明补全细节](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：原子证明义务、最小证据包、三态语义证明、冲突校验和终局处置。
+4. [三阶段运行时授权方法与实验结论](docs/THREE_STAGE_AUTHORIZATION_METHOD.md)：方法形成过程中的递进设计、历史实验和实现入口。
+5. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
+6. [显式委托与类型化复核](docs/DELEGATION_TYPED_REVIEW_EVALUATION.md)：委托数据结构、三类 REVIEW、双基准回归和第三阶段全量清单。
+7. [阶段三最小证据语义审计全量评估](docs/STAGE3_FULL_EVALUATION.md)：638 条语义复核的调用级、任务级结果与误报归因。
+8. [阶段三正常告警审查](docs/STAGE3_NORMAL_ALERT_ANALYSIS.md)：22 个正常 ALERT 的逐类归因，以及三态语义证明的下一步设计。
+9. [阶段三 v2：三态证明与冲突证书](docs/STAGE3_CONFLICT_CERTIFICATE_EVALUATION.md)：正常硬告警从 22/157 降至 1/157 的完整实验与限制。
+10. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
+11. [当前收敛方法](docs/FINAL_CONVERGED_METHOD.md)：当前方案、使用流程、实验结论和唯一下一步。
+12. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
+13. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和pilot结果。
+14. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
+15. [Programmatic Core v0.1](docs/PROGRAMMATIC_GUARD_MODULE.md)：早期公开接口及跨 benchmark 适配原则。
+16. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
 
 ### 2. 当前程序化检测实验
 
