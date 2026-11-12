@@ -57,21 +57,18 @@ if decision.verdict == "allow":
 - `alert`：效果、参数、约束、预算或范围存在明确冲突；
 - `review`：来源、动态次数、中间能力或语义证据仍不充分。
 
-当前方法按三个阶段分别说明：[授权编译](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
+当前方法总览见[Progressive Authorization Proof](docs/METHOD_OVERVIEW.md)，三个阶段的细节分别见[授权编译](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
 
 ## 文档索引
 
 ### 1. 新成员首先阅读
 
-1. [阶段一授权编译细节](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：五元组、Authorization IR、IR-to-DAG lowering 规则及贯穿案例。
-2. [阶段二运行时授权证明细节](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、逐层判定、REVIEW 分类及贯穿案例。
-3. [阶段三语义证明补全细节](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：原子证明义务、最小证据包、三态语义证明、冲突校验和终局处置。
-4. [阶段二完整实现与双基准评估](docs/STAGE2_FULL_EVALUATION.md)：最新全量口径、最终数字、能力边界和复现入口。
-5. [阶段三证明义务评估](docs/STAGE3_PROOF_OBLIGATION_EVALUATION.md)：原子证明问题、图上证据切片、一次有界扩展及最新全量结果。
-6. [阶段三终局授权](docs/STAGE3_TERMINAL_ADJUDICATION.md)：消除 REVIEW 的终局策略、完整实验与代价。
-7. [正常拒绝归因与统一在线模块](docs/NORMAL_FALSE_POSITIVE_GAP_AND_UNIFIED_PIPELINE.md)：阶段缺口、动态委托、统一代码入口和 pilot 结果。
-8. [方法设计动机演进](docs/method-motivation/README.md)：从静态白名单到计划无关关系证明的历史实验依据。
-9. [任务内持久状态的效果授权](docs/AUTHORIZATION_AND_EXECUTION_GRAPH_V1.md)：状态版本研究支线。
+1. [方法概览：Progressive Authorization Proof](docs/METHOD_OVERVIEW.md)：从核心矛盾、Effect 差异层次到三个子方法的统一流程。
+2. [阶段一授权编译细节](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：五元组、Authorization IR、IR-to-DAG lowering 规则及贯穿案例。
+3. [阶段二运行时授权证明细节](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、逐层判定、REVIEW 分类及贯穿案例。
+4. [阶段三语义证明补全细节](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：原子证明义务、最小证据包、三态语义证明、冲突校验和终局处置。
+
+实验结果、方法演进和状态版本研究保留在后续索引中，不再与当前四份方法文档混排。
 
 ### 2. 当前程序化检测实验
 
