@@ -156,7 +156,7 @@ IR 因而固定不可扩大的授权边界，并将具体参数值和合理中�
 
 ## 3. 从 Authorization IR 到 Authorization DAG
 
-合法 IR 适合生成和类型检查，运行时还需要绑定真实工具返回、执行 Binding 查询、合并多个参数来源并定位证明失败的位置。参数形成与授权传播天然构成有向依赖关系：数据从 Source 出发，经过 Transform 和 Constraint，最终绑定到 Effect 的关键字段。**Deterministic DAG Lowerer** 将 IR 中的嵌套表达式机械地展开为这张依赖图。
+合法 IR 回答“用户授权了什么”，但它按 Grant 保存嵌套表达式，尚不能直接表示一项授权在多步执行中已经获得了哪些证据。阶段二需要随着工具调用逐步绑定真实返回，记录某个参数依赖哪次调用和哪个数据版本，复用多个 Binding 共享的来源，并准确定位尚未证明或发生冲突的关系。将这些来源、计算、条件和 Effect 显式展开为 DAG 后，每个节点都可以维护 `unbound / bound / proved / failed` 状态，每条边都能记录具体的证明依赖，系统也可以从候选 Effect 反向切取最小证据。参数形成与授权传播本身构成从 Source 经 Transform 和 Constraint 通向 Effect 的有向依赖关系，因此 **Deterministic DAG Lowerer** 将合法 IR 转换为阶段二可增量求值的 Authorization DAG。
 
 Lowerer 先为每项 Grant 创建 Effect 节点，再从每个安全关键字段的 Binding 根表达式递归展开：
 
