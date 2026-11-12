@@ -16,7 +16,26 @@ Constraints  C：授权成立时必须满足什么状态和条件
 Budget       Q：授权可以使用多少次、持续多久
 ```
 
-这五个分量分别覆盖授权判断中的权限主体、终端后果、数据形成、适用条件和消费范围。以“读取指定 TODO 文件，给每个未完成任务的负责人发送一次提醒，最多十封”为例：TODO 文件可以补全收件人与正文，但无权提出新的任务；允许的 Effect 是发送提醒邮件；收件人和正文需要从未完成任务中提取；邮件只能针对 `status=unfinished` 的记录；每名负责人最多收到一次，总数不超过十次。五元组由此将自然语言中的授权边界转化为五类可检查关系。
+五个分量是五类有类型的授权对象，并不直接对应五个固定图节点。对一项授权 A，可以作如下理解：
+
+```text
+D：Delegation 规则集合
+   (授权来源, 可补全字段, 可服务的 Effect)
+
+E：Effect 描述
+   (Effect 类型, 实现工具, 安全关键字段)
+
+B：从安全关键字段到参数表达式的映射
+   critical_field → literal | BindingDSL expression | absent
+
+C：运行时必须成立的谓词集合
+   {predicate₁, predicate₂, ...}
+
+Q：Effect 的消费策略
+   (计数对象, 单对象上限, 总量上限, 有效期)
+```
+
+Lowering 时，一条 Delegation 规则、一个数据来源、一项关系运算、一个约束和一个 Effect 可以分别生成节点；Binding 映射决定这些节点如何连接；Budget 则被编译为 Effect 的运行时计数策略。以“读取指定 TODO 文件，给每个未完成任务的负责人发送一次提醒，最多十封”为例：TODO 文件可以补全收件人与正文，但无权提出新的任务；允许的 Effect 是发送提醒邮件；收件人和正文需要从未完成任务中提取；邮件只能针对 `status=unfinished` 的记录；每名负责人最多收到一次，总数不超过十次。五元组由此将自然语言中的授权边界转化为五类可检查关系。
 
 ## 1. 从授权五元组到可执行的动态关系
 
@@ -52,7 +71,20 @@ ToolResult(search_hotels)
 
 用户无需提前给出酒店名称，授权规范仍然明确限定了酒店名称的来源和选择方法。运行时可以对真实搜索结果执行同一查询，再将查询结果与 Agent 实际提交的 `hotel` 参数比较。
 
-对于动态工具路径，我们固定终端 Effect 及其关键参数关系，将具体读取、搜索和中间工具留到运行时解析。阶段二根据工具契约判断新增工具的输出是否参与某个已授权 Binding，或其能力是否服务于某个已授权 Effect。由此，参数和路径可以动态展开，而终端 Effect、操作对象、来源权限、适用条件和预算仍受五元组约束。
+对于动态工具路径，我们固定终端 Effect 及其关键参数关系，将具体读取、搜索和中间工具留到运行时解析。判断某个新增工具是否服务于授权关系，需要一份独立于 Agent 输出的工具语义依据。我们将其定义为部署方提供的 **Tool Contract**：
+
+```text
+Tool Contract Σ(t)
+├── kind              read | transform | effect
+├── input_fields      工具接收哪些字段
+├── output_fields     工具产生哪些字段
+├── effect            会造成哪类真实副作用；无副作用则为空
+├── critical_fields   哪些输入决定副作用的安全语义
+├── requires          调用需要哪些对象或能力
+└── provides          调用产生哪些对象或能力
+```
+
+例如，`search_hotels` 是无副作用的读取工具，可提供 `name/rating/price`；`reserve_hotel` 产生 `reservation` Effect，`hotel/start_day/end_day` 是其安全关键字段；`create_cart` 则可以提供后续结算所需的 `cart_id`。阶段一使用 Tool Contract 校验 IR 中引用的工具、字段和 Effect，阶段二使用同一契约判断运行时新增工具的输出是否参与已授权 Binding，或其 `provides` 能力是否被后续已授权 Effect 的 `requires` 消费。由此，参数和路径可以动态展开，而终端 Effect、操作对象、来源权限、适用条件和预算仍受五元组约束。
 
 经过上述表示，五元组可以统一理解为一项带权限约束的声明式查询：Delegation 限定哪些来源可以参与查询，Bindings 定义参数查询程序，Constraints 规定查询结果何时可用，Budget 规定结果可以被消费多少次，Effect 规定结果最终可以流向哪类真实副作用。
 
@@ -88,7 +120,7 @@ Authorization IR
     └── Budget
 ```
 
-**Contract-Grounded Validator** 使用部署方控制的工具契约验证候选 IR。副作用工具契约声明工具产生的 Effect、决定安全语义的关键参数和调用所需字段；读取工具契约声明可提供的数据字段及其来源类型。例如：
+**Contract-Grounded Validator** 使用上述 Tool Contract 验证候选 IR。它以部署方声明的工具输入、输出、Effect 和安全关键字段为准，检查模型生成的授权结构是否引用了真实存在且类型匹配的工具能力。例如：
 
 ```text
 reserve_hotel
@@ -109,7 +141,7 @@ Validator 依次检查：
 6. Budget 是否具有明确边界；
 7. 用户明确要求的 Effect 是否被遗漏。
 
-每个关键参数必须被标记为用户字面值、运行时查询结果、显式禁止或尚无法编译，不能被静默省略。校验失败时，Validator 将结构化错误返回给语义编译器进行一次受限修复；再次失败则终止编译。该过程保证 IR 相对于用户请求和工具契约具有可检查的结构完整性。
+每个关键参数必须被标记为用户字面值、运行时查询结果、显式禁止或尚无法编译。校验失败时，Validator 将结构化错误返回给语义编译器进行一次受限修复；再次失败则终止编译。该过程保证 IR 相对于用户请求和工具契约具有可检查的结构完整性。
 
 ## 3. 从 Authorization IR 到 Authorization DAG
 
@@ -122,7 +154,27 @@ Project(name)
         └── ToolResult(search_hotels)
 ```
 
-**Deterministic DAG Lowerer** 按固定规则将合法 IR 转换为 Authorization DAG：
+从 IR 到 DAG 是确定性的结构转换，类似编译器把表达式语法树展开为数据流图：先为每项 Grant 创建 Effect 节点，再从每个安全关键字段的 Binding 根表达式开始递归展开。遇到数据来源时创建 Source 节点；遇到 DSL 算子时创建 Transform 节点，并用 `data_dep` 连接其输入；表达式根用 `binds(field)` 连接到 Effect；Constraint、Delegation 和版本要求再分别连接到对应路径。相同的来源或子表达式会被合并，因此多个参数可以共享同一份运行时证据。
+
+例如，下面的 IR 表达式：
+
+```text
+hotel ← project(name,
+          aggregate(argmax rating,
+            select(rating > 4,
+              tool_result(search_hotels))))
+```
+
+按照四条递归规则展开：
+
+```text
+tool_result(t)  → Source(t)
+op(x)           → Lower(x) ─data_dep→ Transform(op)
+binding(f, x)   → Lower(x) ─binds(f)→ Effect
+constraint(p)   → Constraint(p) ─guards→ Effect / Transform
+```
+
+**Deterministic DAG Lowerer** 据此执行固定的结构转换：
 
 ```text
 数据来源          → Source Node
