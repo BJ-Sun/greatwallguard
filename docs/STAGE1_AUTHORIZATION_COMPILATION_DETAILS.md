@@ -2,44 +2,30 @@
 
 本阶段的目标是将可信用户请求编译为一份路径无关、可在运行时求值的授权规范。实现这一目标需要解决两个问题：一是如何将含有目标、条件、数据来源和委托关系的自然语言转换为结构化规则；二是如何在具体执行路径和部分工具参数尚未确定时，仍然给出足以约束后续行为的授权边界。
 
-我们的关键观察是：用户指令在 Agent 执行语境下，可以统一理解为一条从权限主体和运行时数据通向真实环境效果的授权关系，即谁允许，哪些数据可以参与，数据经过何种计算，在什么条件下、以多少次被使用，最终产生什么真实后果。判断一项行为是否符合这条关系，需要回答五个授权问题：谁有权补全尚未确定的决策、允许产生什么真实效果、关键参数应当如何形成、授权在什么条件下成立，以及授权可以被使用多少次。我们据此将一项用户授权形式化为五元组：
+我们的关键观察是：用户指令在 Agent 执行语境下，可以统一理解为一条从权限主体和运行时数据通向真实环境效果的授权关系，即谁允许，哪些数据可以参与，数据经过何种计算，在什么条件下、以多少次被使用，最终产生什么真实后果。判断一项行为是否符合这条关系，需要回答五个问题：谁有权补全尚未确定的决策、允许产生什么真实效果、关键参数应当如何形成、授权在什么条件下成立，以及授权可以被使用多少次。
 
-\[
-A=\langle D,E,B,C,Q\rangle
-\]
+这五个问题直接决定 Authorization IR 的字段，不形成额外的中间数据结构：
 
 ```text
-Delegation   D：谁有权补全运行时决策，以及可以补全哪些字段
-Effect       E：允许产生什么真实环境变化
-Bindings     B：Effect 的关键参数应当如何形成
-Constraints  C：授权成立时必须满足什么状态和条件
-Budget       Q：授权可以使用多少次、持续多久
+Authorization IR
+├── delegations：规则集合
+│   (授权来源, 可补全字段, 可服务的 Effect)
+└── grants：授权项集合
+    ├── effect：Effect 描述
+    │   (Effect 类型, 实现工具, 安全关键字段)
+    ├── bindings：关键字段到参数表达式的映射
+    │   critical_field → literal | BindingDSL expression | absent
+    ├── constraints：运行时谓词集合
+    │   {predicate₁, predicate₂, ...}
+    └── budget：Effect 消费策略
+        (计数对象, 单对象上限, 总量上限, 有效期)
 ```
 
-五个分量是五类有类型的授权对象，并不直接对应五个固定图节点。对一项授权 A，可以作如下理解：
+以“读取指定 TODO 文件，给每个未完成任务的负责人发送一次提醒，最多十封”为例：`delegations` 规定 TODO 文件只可补全收件人与正文；`effect` 允许发送提醒邮件；`bindings` 规定收件人和正文从未完成任务中提取；`constraints` 要求记录满足 `status=unfinished`；`budget` 限制每名负责人一次、总数不超过十次。自然语言授权由此直接进入一份包含五类可检查关系的 IR。
 
-```text
-D：Delegation 规则集合
-   (授权来源, 可补全字段, 可服务的 Effect)
+## 1. 从授权字段到可执行的动态关系
 
-E：Effect 描述
-   (Effect 类型, 实现工具, 安全关键字段)
-
-B：从安全关键字段到参数表达式的映射
-   critical_field → literal | BindingDSL expression | absent
-
-C：运行时必须成立的谓词集合
-   {predicate₁, predicate₂, ...}
-
-Q：Effect 的消费策略
-   (计数对象, 单对象上限, 总量上限, 有效期)
-```
-
-Lowering 时，一条 Delegation 规则、一个数据来源、一项关系运算、一个约束和一个 Effect 可以分别生成节点；Binding 映射决定这些节点如何连接；Budget 则被编译为 Effect 的运行时计数策略。以“读取指定 TODO 文件，给每个未完成任务的负责人发送一次提醒，最多十封”为例：TODO 文件可以补全收件人与正文，但无权提出新的任务；允许的 Effect 是发送提醒邮件；收件人和正文需要从未完成任务中提取；邮件只能针对 `status=unfinished` 的记录；每名负责人最多收到一次，总数不超过十次。五元组由此将自然语言中的授权边界转化为五类可检查关系。
-
-## 1. 从授权五元组到可执行的动态关系
-
-五元组给出了授权规则的基本结构，下一步需要使它容纳 Agent 执行中的动态性。动态性主要来自两组信息：一组是动态参数，例如搜索后才能知道的商品 ID、从文件中读取的收件人或创建资源后返回的新 ID；另一组是动态工具路径，例如 Agent 可能采用不同的读取、搜索或中间处理工具完成同一项已授权 Effect。前者要求授权规则能够描述参数的生成过程，后者要求授权规则约束终端效果，同时允许合理的实现路径在运行时展开。
+Authorization IR 给出了授权规则的基本结构，下一步需要使它容纳 Agent 执行中的动态性。动态性主要来自两组信息：一组是动态参数，例如搜索后才能知道的商品 ID、从文件中读取的收件人或创建资源后返回的新 ID；另一组是动态工具路径，例如 Agent 可能采用不同的读取、搜索或中间处理工具完成同一项已授权 Effect。前者要求授权规则能够描述参数的生成过程，后者要求授权规则约束终端效果，同时允许合理的实现路径在运行时展开。
 
 对于动态参数，只记录“允许来自某个文件或某次搜索”并不足以完成授权判断。相同来源可能包含多个候选值，Agent 还需要筛选对象、提取字段、关联记录或选择最优结果。Bindings 因此描述完整的参数生成关系：
 
@@ -84,13 +70,13 @@ Tool Contract Σ(t)
 └── provides          调用产生哪些对象或能力
 ```
 
-例如，`search_hotels` 是无副作用的读取工具，可提供 `name/rating/price`；`reserve_hotel` 产生 `reservation` Effect，`hotel/start_day/end_day` 是其安全关键字段；`create_cart` 则可以提供后续结算所需的 `cart_id`。阶段一使用 Tool Contract 校验 IR 中引用的工具、字段和 Effect，阶段二使用同一契约判断运行时新增工具的输出是否参与已授权 Binding，或其 `provides` 能力是否被后续已授权 Effect 的 `requires` 消费。由此，参数和路径可以动态展开，而终端 Effect、操作对象、来源权限、适用条件和预算仍受五元组约束。
+例如，`search_hotels` 是无副作用的读取工具，可提供 `name/rating/price`；`reserve_hotel` 产生 `reservation` Effect，`hotel/start_day/end_day` 是其安全关键字段；`create_cart` 则可以提供后续结算所需的 `cart_id`。阶段一使用 Tool Contract 校验 IR 中引用的工具、字段和 Effect，阶段二使用同一契约判断运行时新增工具的输出是否参与已授权 Binding，或其 `provides` 能力是否被后续已授权 Effect 的 `requires` 消费。由此，参数和路径可以动态展开，而终端 Effect、操作对象、来源权限、适用条件和预算仍受 IR 约束。
 
-经过上述表示，五元组可以统一理解为一项带权限约束的声明式查询：Delegation 限定哪些来源可以参与查询，Bindings 定义参数查询程序，Constraints 规定查询结果何时可用，Budget 规定结果可以被消费多少次，Effect 规定结果最终可以流向哪类真实副作用。
+经过上述表示，一项授权可以理解为带权限约束的声明式查询：Delegation 限定哪些来源可以参与查询，Bindings 定义参数查询程序，Constraints 规定查询结果何时可用，Budget 规定结果可以被消费多少次，Effect 规定查询结果最终可以流向哪类真实副作用。
 
 ## 2. 从自然语言生成可信 Authorization IR
 
-五元组和 Binding DSL 给出了授权规范的结构，随后需要解决自然语言如何可靠进入该结构的问题。这里存在两类风险：固定规则难以识别“评分最高”对应 `argmax`、“每个未完成任务的负责人”对应 `select + project` 等复杂语义；生成模型又可能遗漏关键参数、引用不存在的来源，或者扩大用户授权。我们的关键观察是，语义理解与安全边界校验可以分离：语义模型负责生成候选结构，部署方控制的工具契约负责判断该结构是否完整、合法。基于这一分工，从自然语言到合法 IR 的转换由语义编译和契约校验两个模块完成，随后再由确定性 Lowerer 生成 DAG：
+IR 字段和 Binding DSL 给出了授权规范的结构，随后需要解决自然语言如何可靠进入该结构的问题。这里存在两类风险：固定规则难以识别“评分最高”对应 `argmax`、“每个未完成任务的负责人”对应 `select + project` 等复杂语义；生成模型又可能遗漏关键参数、引用不存在的来源，或者扩大用户授权。我们的关键观察是，语义理解与安全边界校验可以分离：语义模型负责生成候选结构，部署方控制的工具契约负责判断该结构是否完整、合法。基于这一分工，从自然语言到合法 IR 的转换由语义编译和契约校验两个模块完成，随后再由确定性 Lowerer 生成 DAG：
 
 ```text
 可信用户请求 + 工具契约
@@ -108,7 +94,7 @@ Deterministic DAG Lowerer
 Authorization DAG
 ```
 
-**Constrained Semantic Compiler** 使用语义模型识别用户请求中的五元组，并将动态参数翻译为 Binding DSL 表达式。模型只能引用部署方提供的工具、Effect、字段类型、数据来源和 DSL 算子。其输出是一份候选授权程序，运行时放行仍需后续证明：
+**Constrained Semantic Compiler** 使用语义模型识别用户请求中的委托、Effect、参数关系、条件和预算，并将动态参数翻译为 Binding DSL 表达式。模型只能引用部署方提供的工具、Effect、字段类型、数据来源和 DSL 算子。其输出是一份候选授权程序，运行时放行仍需后续证明：
 
 ```text
 Authorization IR
@@ -241,23 +227,7 @@ send_email
   critical_fields = recipients, subject, body, attachments
 ```
 
-该请求首先形成授权五元组：
-
-```text
-D：read_todo 只可补全 recipients 和 body，不能新增 Effect
-E：允许 send_email 产生 external_message
-B：recipients ← project(owner_email,
-                        select(status=unfinished, read_todo))
-   subject    ← literal("Task Reminder")
-   body       ← template("Reminder: {task}",
-                        project(task,
-                        select(status=unfinished, read_todo)))
-   attachments← absent
-C：所使用记录的 status == unfinished
-Q：每个 recipient 最多一次，总数最多十次
-```
-
-语义编译器将其转换为候选 IR，下面省略重复的嵌套结构，仅展示关键字段：
+语义编译器根据用户请求和工具契约直接生成候选 IR。下面使用紧凑字符串表示 Binding 表达式，实际结构是经过类型约束的嵌套 AST：
 
 ```json
 {
