@@ -1,207 +1,92 @@
-# 阶段一：将自然语言编译为 Authorization DAG
+# 阶段一：Authorization Compilation
 
-阶段一要解决的不是“预测 Agent 将调用哪些工具”，而是：**在具体执行路径和参数尚未确定时，先建立一份可供运行时验证的用户授权。**
+阶段一将可信用户请求编译为一份路径无关、可在运行时求值的授权规范。Agent 的具体执行路径和部分工具参数通常要等到工具返回后才能确定，但任何产生真实环境影响的行为都必须回答五个授权问题：谁有权补全尚未确定的决策、允许产生什么真实效果、关键参数应当如何形成、行为需要满足什么条件，以及授权可以被使用多少次。我们据此将一项用户授权形式化为五元组：
 
-为此，我们提出 **Authorization Compilation** 方法：将可信用户请求编译为一张路径无关、可在运行时实例化和校验的 Authorization DAG。该方法包含三个依次执行的模块：
+\[
+A=\langle D,E,B,C,Q\rangle
+\]
 
 ```text
-① Constrained Semantic Compiler
-   可信用户请求 → 候选 Authorization IR
-
-② Contract-Grounded Validator
-   工具契约 → 类型检查、完整性检查与一次受限修复
-
-③ Deterministic DAG Lowerer
-   合法 IR → Authorization DAG
+Delegation   D：谁有权补全运行时决策，以及可以补全哪些字段
+Effect       E：允许产生什么真实环境变化
+Bindings     B：Effect 的关键参数应当如何形成
+Constraints  C：授权成立时必须满足什么状态和条件
+Budget       Q：授权可以使用多少次、持续多久
 ```
 
-三个模块分别解决自然语言理解、生成式输出约束和运行时可验证表示问题。阶段一最终输出一张待运行时数据实例化的授权证明模板。
+这五个分量分别覆盖授权判断中的权限主体、终端后果、数据形成、适用条件和消费范围。以“读取指定 TODO 文件，给每个未完成任务的负责人发送一次提醒，最多十封”为例：TODO 文件可以补全收件人与正文，但无权提出新的任务；允许的 Effect 是发送提醒邮件；收件人和正文需要从未完成任务中提取；邮件只能针对 `status=unfinished` 的记录；每名负责人最多收到一次，总数不超过十次。五元组由此固定了用户授权的外部边界。
 
-整个阶段按照下面的逻辑逐层构造：
+## 1. 从授权五元组到可执行的动态关系
+
+五元组可以描述 Effect、来源权限、适用条件和使用次数，其中仍有两类信息需要留到运行时确定。第一类是动态参数，例如搜索后才能知道的商品 ID、从文件中读取的收件人或创建资源后返回的新 ID；第二类是实现路径，例如 Agent 可能采用不同的读取、搜索或中间处理工具完成同一项已授权 Effect。
+
+对于动态参数，只记录“允许来自某个文件或某次搜索”并不足以完成授权判断。相同来源可能包含多个候选值，Agent 还需要筛选对象、提取字段、关联记录或选择最优结果。Bindings 因此描述完整的参数生成关系：
 
 ```text
-自然语言用户请求
-        ↓
-识别授权五元组
-        ↓
-将动态参数表示为有限关系查询
-        ↓
-LLM 生成候选 Authorization IR
-        ↓
-工具契约进行类型与完整性检查
-        ↓
-确定性 Lowering
-        ↓
-Authorization DAG
+工具参数 = 授权数据来源 + 允许的数据变换
 ```
 
-这里需要区分授权边界与执行计划。阶段一静态编译的是用户允许的**终端效果及其不变量**，而不是 Agent 必须照抄的完整工具序列：
+我们观察到，这类参数形成过程与数据库查询具有相同结构：从一个或多个数据源中选取记录、投影字段、连接对象、聚合集合，再将结果规范化或构造成受限文本。基于关系代数，我们设计了有限的 **Binding DSL**：
 
 ```text
-阶段一固定：允许产生什么终端 Effect、关键参数如何形成、
-            哪些来源可以补全参数、条件和预算是什么。
-
-阶段一不固定：具体参数值、读取工具的等价实现、
-              为完成终端效果临时需要的中间工具及调用顺序。
+select       按谓词筛选记录
+project      提取指定字段
+join         按键关联多个来源
+aggregate    执行 argmax、argmin、count、sum 等集合运算
+compute      执行日期差、数值运算等受限确定性计算
+normalize    规范日期、URL、邮箱和标识符
+template     使用已授权字段构造受限文本
 ```
 
-当前 IR 中的 `tool` 表示由工具契约绑定的终端 Effect 实现，而不是整条计划的工具白名单。读取工具和中间工具不需要全部提前写入计划，阶段二可分别通过来源能力和受限能力派生进行验证。因此，阶段一留下两类运行时变量：Binding 中尚未出现的参数值，以及尚未确定的实现路径；前者由数据查询实例化，后者由阶段二在不扩大终端授权的前提下验证。
-
-## 1. 核心观察与授权定义
-
-用户请求无法直接与工具调用比较。相同的行为在不同语境下可能具有不同权限，而自然语言中还混合了目标、条件、数据来源和委托关系。因此，我们首先需要确定：一次工具行为获得用户授权，最少需要描述哪些信息？
-
-**Key Insight.** 用户的一段自然语言指令可以被规范化为一条从权限主体、运行时数据和计算过程通向真实环境效果的授权链：谁有权补全决策，哪些数据可以参与，数据经过何种计算形成工具参数，授权在什么条件下、以多少次被消费，以及最终允许产生什么效果。
-
-基于这一观察，我们定义了面向工具型 Agent 的**授权五元组** \(A=\langle D,E,B,C,Q\rangle\)，将一项用户授权分解为五个部分：
+例如，“预订评分超过 4 分且评分最高的酒店”被表示为：
 
 ```text
-Delegation   谁可以补全运行时尚未确定的决策
-Effect       允许产生什么真实环境变化
-Bindings     效果关键参数如何形成
-Constraints  授权成立时必须满足什么条件
-Budget       授权可以被消费多少次、持续多久
-```
-
-五元组定义了授权需要覆盖的语义，并将开放的自然语言意图收敛为有限授权接口。其中，Effect、Constraints 和 Budget 固定终端边界，Bindings 允许参数延迟确定，Delegation 则限定哪些运行时来源可以补全参数，或在用户明确授权时补充效果。但它还没有解决动态参数如何表达。
-
-## 2. 从参数集合到参数生成关系
-
-一种简单做法是把 Bindings 表示为允许的参数值：
-
-```text
-recipient = Alice
-file = report.md
-```
-
-但动态任务中的许多值在用户发出指令时尚不存在。例如：
-
-- 酒店名称需要由搜索结果确定；
-- 收件人需要从 TODO 文件中提取；
-- 商品 ID 需要根据价格和评分筛选；
-- 新文件 ID 只有创建文件后才会返回。
-
-因此，我们发现 Bindings 不能只是静态参数列表，而必须描述：
-
-```text
-参数 ← 数据来源 + 推导过程
-```
-
-也就是最终参数允许从哪些数据中，经过什么计算得到。
-
-相同的工具和终端效果，可能因为收件人、目标对象、金额或状态版本不同，分别构成正常行为或越权行为。因此，参数值是否“出现过”并不足够；系统必须保留从授权数据来源到实际工具参数的完整推导关系。
-
-我们将 Binding 定义为从安全关键字段到参数生成表达式的映射。每个表达式说明参数由哪个授权来源、经过哪些确定性变换产生。这使 Bindings 从“值集合”提升为“参数查询程序”。
-
-如果允许 LLM 用任意自然语言描述参数生成过程，运行时仍然无法稳定执行和验证。例如：
-
-```text
-选择一个合适的酒店
-找到真正需要联系的人
-按照文件要求处理
-```
-
-这些描述没有明确的计算语义。
-
-我们的观察是：Agent 从用户消息、文件、网页和工具返回中提取信息并形成工具参数时，其中可确定、可程序化的部分，本质上可以表示为一次声明式数据查询：
-
-```text
-从哪些数据中
-筛选哪些记录
-提取哪些字段
-关联哪些来源
-选择哪个对象
-进行什么确定性计算
-```
-
-基于这一数据查询视角，我们借鉴关系代数，设计了有限的 **Binding DSL**：
-
-```text
-select       按条件筛选对象
-project      提取字段
-join         关联多个来源
-aggregate    最大、最小、计数和求和
-compute      执行受限确定性计算
-normalize    规范日期、URL和标识符
-template     使用已授权字段构造有限文本
-```
-
-例如：
-
-> 预订评分超过 4 分且评分最高的酒店。
-
-可以表示为：
-
-```text
-search_hotels
+ToolResult(search_hotels)
 → select(rating > 4)
 → aggregate(argmax rating)
 → project(name)
-→ bind reservation.hotel
+→ bind(reservation.hotel)
 ```
 
-用户不需要提前知道酒店名称，但必须提前限定酒店名称的合法生成过程。
+用户无需提前给出酒店名称，授权规范仍然明确限定了酒店名称的来源和选择方法。运行时可以对真实搜索结果执行同一查询，再将查询结果与 Agent 实际提交的 `hotel` 参数比较。
 
-至此，授权的五个部分可以被统一理解为：
+动态工具路径采用相同的边界原则处理。阶段一固定终端 Effect 及其关键参数关系，不枚举唯一工具序列；读取、搜索和中间工具在阶段二根据工具契约判断其输出是否参与某个已授权 Binding，或其能力是否是实现已授权 Effect 的必要中间步骤。这样，动态性被限制在“如何取得和处理已授权数据”以及“如何实现已授权 Effect”之内，运行时数据不能据此新增终端 Effect、扩大操作对象或改变预算。
+
+经过上述表示，五元组可以统一理解为一项带权限约束的声明式查询：Delegation 限定哪些来源可以参与查询，Bindings 定义参数查询程序，Constraints 规定查询结果何时可用，Budget 规定结果可以被消费多少次，Effect 规定结果最终可以流向哪类真实副作用。
+
+## 2. 从自然语言生成可信 Authorization IR
+
+五元组和 Binding DSL 给出了授权规范的目标结构，下一步是把自然语言请求可靠地转换为该结构。固定规则难以稳定识别“评分最高”对应 `argmax`、“每个未完成任务的负责人”对应 `select + project`，也难以区分文件只提供字段值还是被用户授权提出新的 Effect。从自然语言到合法 IR 的转换因此由语义编译和契约校验两个职责分离的模块完成，随后再由确定性 Lowerer 生成 DAG：
 
 ```text
-Delegation   限定哪些数据源有权参与查询
-Bindings     定义参数查询过程
-Constraints  限定查询结果可以在什么状态下使用
-Budget       限定查询结果可以被消费多少次
-Effect       限定查询结果最终可以流向什么副作用
+可信用户请求 + 工具契约
+          │
+          ▼
+Constrained Semantic Compiler
+          │  候选 Authorization IR
+          ▼
+Contract-Grounded Validator
+          │  合法 Authorization IR
+          ▼
+Deterministic DAG Lowerer
+          │
+          ▼
+Authorization DAG
 ```
 
-由此，用户授权被表示为一份“带权限和消费约束的声明式查询”。Binding DSL 将动态任务中的可程序化部分限制在少量通用算子内，使后续系统能够执行相同查询并验证真实参数。
-
-## 3. Authorization Compilation
-
-有限 DSL 解决了“如何表示”的问题，但还需要解决“如何从自然语言生成”的问题。
-
-纯规则方法难以稳定识别：
-
-- “评分最高”对应 `argmax`；
-- “每个未完成任务的负责人”对应 `select + project`；
-- “入住一晚”对应日期计算；
-- “根据 Taylor 的邮件创建日程”包含字段级委托；
-- “完成邮件中的任务”则可能包含效果级委托。
-
-因此，Authorization Compilation 的第一个模块是 **Constrained Semantic Compiler**。它使用 LLM 作为语义编译前端，将可信用户请求翻译为候选 Authorization IR：
+**Constrained Semantic Compiler** 使用语义模型识别用户请求中的五元组，并将动态参数翻译为 Binding DSL 表达式。模型只能引用部署方提供的工具、Effect、字段类型、数据来源和 DSL 算子。其输出是一份候选授权程序，运行时放行仍需后续证明：
 
 ```text
 Authorization IR
 ├── Delegations
 └── Grants
     ├── Effect
-    ├── Bindings: field → expression
+    ├── Bindings: critical_field → expression
     ├── Constraints
     └── Budget
 ```
 
-这里的设计原则是：自然语言理解需要生成模型，但安全边界不能由生成模型自由定义。因此，LLM 只负责将自然语言翻译为有限结构，不负责决定某次调用是否放行，也不能创造新的工具、效果或运算符。该模块的输出是一份带类型字段的候选授权程序，而不是安全决策。
-
-但这又带来下一问题：如何防止 LLM 遗漏关键参数或生成不存在的授权？
-
-生成模型可能遗漏关键参数、引用不存在的工具和字段，或将外部内容中的动作误认为用户授权。因此，候选 IR 不能直接进入运行时。
-
-为此，第二个模块 **Contract-Grounded Validator** 为每个工具引入部署方控制的契约。其依据是：工具 schema 只描述参数的语法，无法说明哪些字段决定安全效果；因此需要在 schema 之上补充稳定的 Effect Contract。
-
-副作用工具声明：
-
-```text
-工具会产生什么 Effect；
-哪些参数决定其安全语义；
-哪些字段是实际调用所必需的。
-```
-
-读取工具声明：
-
-```text
-工具可以提供哪些字段；
-这些字段属于什么数据来源。
-```
-
-例如：
+**Contract-Grounded Validator** 使用部署方控制的工具契约验证候选 IR。副作用工具契约声明工具产生的 Effect、决定安全语义的关键参数和调用所需字段；读取工具契约声明可提供的数据字段及其来源类型。例如：
 
 ```text
 reserve_hotel
@@ -212,21 +97,21 @@ search_hotels
   output_fields = name, rating, price
 ```
 
-Validator 随后执行：
+Validator 依次检查：
 
-1. 工具和 Effect 是否存在于契约中；
-2. 所有安全关键参数是否都被表达；
-3. 数据来源和字段是否属于已知 schema；
-4. 使用的关系算子是否合法；
+1. IR 引用的工具和 Effect 是否存在；
+2. Effect 的所有安全关键参数是否都有 Binding；
+3. 数据来源和字段是否属于已知工具输出；
+4. Binding 是否只使用有限 DSL 算子且类型匹配；
 5. Constraints 是否可以执行；
-6. Budget 是否具有有限边界；
+6. Budget 是否具有明确边界；
 7. 用户明确要求的 Effect 是否被遗漏。
 
-每个关键字段都必须被表示为用户字面值、运行时来源及查询表达式、显式未授权或尚无法确定，不能被静默省略。
+每个关键参数必须被标记为用户字面值、运行时查询结果、显式禁止或尚无法编译，不能被静默省略。校验失败时，Validator 将结构化错误返回给语义编译器进行一次受限修复；再次失败则终止编译。该过程保证 IR 相对于用户请求和工具契约具有可检查的结构完整性。
 
-LLM 输出因而只是一份候选程序。只有经过类型检查和完整性检查的 IR 才能进入后续阶段。校验失败时，Validator 将具体错误返回给编译前端，最多进行一次受限修复；仍不合法则编译失败，而不是退化为宽泛白名单。该模块保证的是相对于工具契约的结构完整性，而非声称完全理解用户语义。
+## 3. 从 Authorization IR 到 Authorization DAG
 
-校验后的 IR 中，每个 Binding 是一棵嵌套表达式树。例如：
+合法 IR 已经表达了用户授权，但其嵌套表达式不便于运行时绑定真实工具返回、复用共同来源、合并多个参数关系和定位证明失败的位置。例如，一个动态酒店参数在 IR 中是一棵表达式树：
 
 ```text
 Project(name)
@@ -235,40 +120,14 @@ Project(name)
         └── ToolResult(search_hotels)
 ```
 
-表达式树适合生成和校验，但运行时需要：
-
-- 绑定具体工具返回；
-- 汇合多个参数来源；
-- 复用共同数据来源；
-- 定位证明在哪一步失败；
-- 从最终 Effect 反向切取最小证据。
-
-表达式树适合描述单个参数的计算，但运行时授权需要同时合并多个参数、条件、委托和预算，并定位每项证明的成功或失败。因此，第三个模块 **Deterministic DAG Lowerer** 将经过验证的表达式 AST 按照固定规则转换为 Authorization DAG。Lowerer 不再调用 LLM，使同一份合法 IR 始终产生同构的证明结构：
-
-```text
-ToolResult(search_hotels)
-        │ data_dep
-        ▼
-Select(rating > 4)
-        │ data_dep
-        ▼
-Aggregate(argmax rating)
-        │ data_dep
-        ▼
-Project(name)
-        │ binds(hotel)
-        ▼
-Effect(reservation)
-```
-
-生成规则由各 IR 构件的证明职责决定：
+**Deterministic DAG Lowerer** 按固定规则将合法 IR 转换为 Authorization DAG：
 
 ```text
 数据来源          → Source Node
 关系运算          → Transform Node
 执行条件          → Constraint Node
-终端副作用        → Effect Node
 权限转移          → Delegation Node
+终端副作用        → Effect Node
 
 计算依赖          → data_dep
 参数填充          → binds
@@ -277,48 +136,41 @@ Effect(reservation)
 状态版本依赖      → version_dep
 ```
 
-Budget 不是参数数据流，而是 Effect 的状态化消费规则，由运行时账本维护。
-
-DAG 因此不是自然语言的可视化结果，而是一张可执行的授权证明模板：
-
-- 叶节点规定证明可以从哪些可信值或运行时来源开始；
-- 中间节点规定允许进行哪些确定性计算；
-- Constraint 和 Delegation 限定数据何时以及凭什么可以继续传播；
-- Effect 是证明的终点；
-- Budget 限定同一证明可以被使用多少次。
-
-三个模块合在一起形成如下编译算法：
+酒店参数由此生成下面的证明路径：
 
 ```text
-Algorithm: CompileAuthorization(U, Σ)
-
-Input:
-  U  可信用户请求
-  Σ  Effect / Observation 工具契约
-
-Output:
-  GA Authorization DAG，或编译失败
-
-1. 将 U、有限 Binding DSL 和 Σ 交给 Semantic Compiler；
-2. 生成候选 Authorization IR；
-3. Validator 检查 Effect、关键字段、来源、算子、条件和预算；
-4. 若失败，携带确定性错误进行最多一次修复并重新验证；
-5. 创建可信用户根节点和经过验证的 Delegation 节点；
-6. 对每个 Grant 创建 Effect 节点；
-7. 递归 Lower 每个 Binding 表达式并连接 binds 边；
-8. Lower 每个 Constraint 并连接 guards 边；
-9. 将 Budget 编译为 Effect 的运行时消费策略；
-10. 检查图无环、关键字段完整和所有来源均有契约；
-11. 返回 GA；任何检查失败均不产生授权。
+Source: search_hotels result
+          │ data_dep
+          ▼
+Select: rating > 4
+          │ data_dep
+          ▼
+Aggregate: argmax(rating)
+          │ data_dep
+          ▼
+Project: name
+          │ binds(hotel)
+          ▼
+Effect: reservation
 ```
 
-该算法将 LLM 限定在第一步的语义翻译中；IR 验证、图生成和图不变量检查均由确定性程序完成。
+图中的叶节点规定参数可以从哪些可信字面值或运行时来源开始，中间节点规定允许执行哪些确定性变换，Delegation 和 Constraint 限定数据凭什么以及何时可以继续传播，Effect 是授权证明的终点。Budget 作为 Effect 的状态化消费规则由运行时账本维护。Lowerer 不调用语义模型，因此同一份合法 IR 始终产生同构的证明结构。
 
-## 4. 贯穿案例：从用户指令到 DAG
+完整编译过程可以写为：
 
-最后使用一个案例集中展示五元组、IR 和 DAG 的实际结构。
+```text
+CompileAuthorization(U, Σ):
+  1. SemanticCompiler(U, Σ, BindingDSL) → candidate IR
+  2. Validator(candidate IR, Σ) → valid IR or typed errors
+  3. 对一次修复后的 IR 重新执行 Validator
+  4. Lowerer(valid IR) → Authorization DAG
+  5. 检查 DAG 无环、关键字段完整、所有来源均有契约
+  6. 返回 DAG；任一必要检查失败则不产生授权
+```
 
-### 4.1 用户请求和工具环境
+其中，语义模型只参与自然语言到候选 IR 的翻译；IR 验证、DAG 生成和图不变量检查均由确定性程序完成。
+
+## 4. 贯穿案例：从用户请求到 Authorization DAG
 
 用户请求：
 
@@ -335,125 +187,68 @@ send_email
   critical_fields = recipients, subject, body, attachments
 ```
 
-### 4.2 五元组
-
-\[
-A=\langle D,E,B,C,Q\rangle
-\]
+该请求首先形成授权五元组：
 
 ```text
-D：TODO 文件具有字段级委托，
-   只允许参与填写 recipients 和 body，
-   不能新增其他 Effect。
-
-E：允许通过 send_email 产生 external_message。
-
+D：read_todo 只可补全 recipients 和 body，不能新增 Effect
+E：允许 send_email 产生 external_message
 B：recipients ← project(owner_email,
                         select(status=unfinished, read_todo))
    subject    ← literal("Task Reminder")
    body       ← template("Reminder: {task}",
                         project(task,
                         select(status=unfinished, read_todo)))
-   attachments← absent(explicit_forbid=true)
-
-C：所使用记录的 status == unfinished。
-
-Q：按 recipients 计数，每个值最多一次，总数最多十次。
+   attachments← absent
+C：所使用记录的 status == unfinished
+Q：每个 recipient 最多一次，总数最多十次
 ```
 
-### 4.3 Authorization IR
+语义编译器将其转换为候选 IR，下面省略重复的嵌套结构，仅展示关键字段：
 
 ```json
 {
-  "schema": "authorization_ir_v1",
   "delegations": [{
-    "delegation_id": "todo-fields",
     "source": "read_todo",
-    "authority": "fields",
     "allowed_fields": ["recipients", "body"],
-    "allowed_effects": ["external_message"],
-    "allowed_tools": ["send_email"],
-    "requires_confirmation": false
+    "allowed_effects": ["external_message"]
   }],
   "grants": [{
-    "grant_id": "remind-unfinished-tasks",
     "tool": "send_email",
     "effect": "external_message",
     "bindings": {
-      "recipients": {
-        "op": "project",
-        "field": "owner_email",
-        "source": {
-          "op": "select",
-          "field": "status",
-          "comparator": "eq",
-          "value": "unfinished",
-          "source": {"op": "tool_result", "tool": "read_todo"}
-        }
-      },
-      "subject": {"op": "literal", "value": "Task Reminder"},
-      "body": {
-        "op": "template",
-        "format": "Reminder: {task}",
-        "source": {
-          "op": "project",
-          "field": "task",
-          "source": {
-            "op": "select",
-            "field": "status",
-            "comparator": "eq",
-            "value": "unfinished",
-            "source": {"op": "tool_result", "tool": "read_todo"}
-          }
-        }
-      },
-      "attachments": {"op": "absent", "explicit_forbid": true}
+      "recipients": "project(owner_email, select(status=unfinished, read_todo))",
+      "subject": "literal(Task Reminder)",
+      "body": "template(Reminder: {task}, project(task, select(status=unfinished, read_todo)))",
+      "attachments": "absent"
     },
-    "constraints": [{
-      "left": {
-        "op": "project",
-        "field": "status",
-        "source": {"op": "tool_result", "tool": "read_todo"}
-      },
-      "comparator": "eq",
-      "right": {"op": "literal", "value": "unfinished"}
-    }],
-    "budget": {
-      "mode": "per_binding",
-      "fields": ["recipients"],
-      "max_per_binding": 1,
-      "max_total": 10
-    }
+    "constraints": ["status == unfinished"],
+    "budget": {"per_recipient": 1, "max_total": 10}
   }]
 }
 ```
 
-### 4.4 Lowering 后的 DAG
+Validator 根据 `send_email` 契约确认四个关键参数均有定义，`owner_email`、`task` 和 `status` 均由 `read_todo` 提供，所用算子类型合法，预算具有明确上限。Lowerer 随后生成：
 
 ```text
 Trusted User
-   │ delegates(fields: recipients/body)
+   │ delegates(fields: recipients, body)
    ▼
-Delegation: read_todo
-
-read_todo ─→ select(status=unfinished) ─→ project(owner_email)
-    │                                                │
-    │                                                │ binds recipients
-    │                                                ▼
-    └─→ select(status=unfinished) ─→ project(task) → template(body)
-                                                    │ binds body
-"Task Reminder" ───────────────────────────────────┤ binds subject
-absent(attachments) ────────────────────────────────┤ binds attachments
-                                                    ▼
-                                      Effect: external_message
-                                      ├─ guard: status=unfinished
-                                      ├─ per recipient ≤ 1
-                                      └─ total ≤ 10
+Source: read_todo
+   ├─→ Select(status=unfinished) ─→ Project(owner_email)
+   │                                      │ binds recipients
+   │                                      ▼
+   └─→ Select(status=unfinished) ─→ Project(task) ─→ Template(body)
+                                                  │ binds body
+Literal("Task Reminder") ─────────────────────────┤ binds subject
+Absent(attachments) ──────────────────────────────┤ binds attachments
+                                                  ▼
+                                   Effect: external_message
+                                   ├─ guard: status=unfinished
+                                   ├─ per recipient ≤ 1
+                                   └─ total ≤ 10
 ```
 
-初始图中，用户字面值和 `absent` 节点为 `proved`，`read_todo` 为 `unbound`。运行时读取 TODO 后，阶段二将实际 observation 绑定到 Source，执行 `select`、`project` 和 `template`，再将求值得到的合法参数与实际 `send_email` 参数比较。
-
-例如，若 TODO 返回：
+若运行时 `read_todo` 返回：
 
 ```json
 [
@@ -464,40 +259,18 @@ absent(attachments) ────────────────────
 ]
 ```
 
-图只会导出：
+该 DAG 将导出 `recipients=alice@example.com` 和 `body="Reminder: Submit report"`。阶段二可以据此验证实际邮件参数：给 Alice 发送匹配正文时授权关系闭合；给 Bob 发送违反状态条件；添加附件违反 `absent`；再次给 Alice 发送超过 Budget；文件中出现“删除其他资源”的要求也无法新增授权图中不存在的 Effect。
+
+阶段一至此完成如下数据结构变换：
 
 ```text
-recipients = alice@example.com
-body = "Reminder: Submit report"
+可信自然语言请求
+      ↓ 受约束语义翻译
+候选 Authorization IR
+      ↓ 工具契约校验
+合法 Authorization IR
+      ↓ 确定性 Lowering
+Authorization DAG
 ```
 
-给 Alice 发送匹配正文时，数据流、权限流、条件和预算闭合；给 Bob 发送会违反状态约束；添加附件会违反显式 `absent`；文件要求删除其他对象会超出字段级委托；再次给 Alice 发送会超过 Budget。
-
-## 5. 阶段一的完整闭环
-
-阶段一最终完成如下数据结构变化：
-
-```text
-自然语言字符串
-→ 授权五元组
-→ Binding 查询表达式
-→ JSON Authorization IR
-→ 类型检查后的表达式 AST
-→ Authorization DAG
-→ 等待运行时证据绑定的授权证明模板
-```
-
-从研究贡献看，这一阶段形成了一个闭环：我们首先发现固定调用路径不能表达动态授权，进而定义授权五元组；基于关系代数和编译器 IR 思想设计有限 Binding DSL；再提出由语义编译、契约验证和确定性 Lowering 构成的 Authorization Compilation 算法。其直接能力不是提前预测 Agent 的完整计划，而是为运行时的每个实际效果提供一张可求值、可追溯、可拒绝的授权证明模板。
-
-每一项设计都解决上一层遗留的问题：
-
-| 上一层问题 | 下一项设计 |
-|---|---|
-| 自然语言不能直接审计 | 授权五元组 |
-| 动态参数无法提前给值 | Binding 生成关系 |
-| 开放生成关系无法执行 | 有限关系 DSL |
-| 规则难以理解复杂语言 | LLM 语义编译 |
-| LLM 可能遗漏或越权 | 工具契约和确定性验证 |
-| AST 不适合运行时证明 | Lowering 为 Authorization DAG |
-
-阶段一的输出不是对 Agent 执行路径的预测，而是：**一张描述哪些来源经过哪些计算，在什么权限、状态和消费边界内，可以生成哪些工具参数并流向哪些真实副作用的授权查询图。**
+Authorization DAG 固定用户授权的终端边界和参数形成关系，同时保留具体参数值与合理中间工具路径的运行时动态性；它是阶段二执行确定性授权证明的输入。
