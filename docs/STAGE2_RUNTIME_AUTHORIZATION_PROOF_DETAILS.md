@@ -48,7 +48,7 @@ read-1 : read_todo : [1].owner_email  = bob@example.com
 ```text
 Agent 发起读取调用
         ↓
-网关根据 Observation Contract 检查读取角色和范围
+网关根据部署方读取策略检查调用对象和范围
         ↓
 工具执行并返回
         ↓
@@ -100,7 +100,7 @@ created_by_call_id / write_authorized
 ALLOW / ALERT / REVIEW
 ```
 
-**调用一致性检查。** 证明器先判断工具角色：终端工具需要对应 DAG 中已有的 Effect；读取工具需要命中 DAG Source、部署方声明的等价来源或 Observation Contract；计划外中间工具需要具有第一部分求得的临时能力；产生新终端 Effect 的工具需要用户明确给出 Effect 级委托。Observation Contract 对读取行为作进一步约束：`passive` 读取可以直接记录，`scoped` 读取需要命中授权来源，具有外发能力的 `outbound` 读取还要检查其请求参数是否由可信用户直接授权。
+**调用一致性检查。** 证明器先判断工具角色：终端工具需要对应 DAG 中已有的 Effect；读取工具需要命中 DAG Source、部署方声明的等价来源或读取策略；计划外中间工具需要具有第一部分求得的临时能力；产生新终端 Effect 的工具需要用户明确给出 Effect 级委托。部署方读取策略只处理少量实现差异：纯被动读取可以直接记录，带对象范围的读取需要命中授权来源，可能通过请求参数向外传输数据的读取还要验证目标地址和携带参数。
 
 工具角色成立后，证明器根据 Effect Contract 取得安全关键字段和必填字段，再按参数类型逐项核对：
 
