@@ -1,6 +1,6 @@
 # GreatWallGuard：跨任务状态版本的效果授权
 
-> 本文保留任务内持久状态的研究支线，不把尚未验证的判别能力写成实验结论。当前方法分别见[阶段一授权编译](STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[阶段二运行时授权证明](STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[阶段三语义证明补全](STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
+> 本文保留任务内持久状态的研究支线，不把尚未验证的判别能力写成实验结论。当前方法分别见[阶段一授权编译](progressive-authorization-proof/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[阶段二运行时授权证明](progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[阶段三语义证明补全](progressive-authorization-proof/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
 
 本文描述的是长程论文最终要解决的**跨轮状态版本授权**。当前已经运行的 AgentDojo 方法解决的是它的基础问题：如何把可信用户请求转成效果授权，并用真实执行事实证明动态工具参数。两者使用同一条“授权—事实—证明”原则，但当前实验尚未证明字段级版本的写入授权与后续使用关联。
 
@@ -73,7 +73,7 @@ Agent 执行任务时不仅调用工具，还会持续改写记忆、文件和�
 
 第二步构造配对对照，而不先扩充大批攻击变体：相同初始状态下，分别运行保持原状态的正常交接、得到真实用户授权且有正式依据的合法状态升级，以及攻击推动的状态升级；再加入正常的重复读写和不同执行顺序。先单独评估授权记录是否准确，再评估版本链是否完整，最后在相同审计预算下测量效果判定、正常任务误报和开销，避免把提取错误误认为图失效。
 
-第三步只针对闭环中暴露出的难例深化方法。核心对照是“写入时立即检查”与“最终只检查工具和参数来源”：若它们已经能以相同误报拦住攻击，版本回溯没有独立价值；若写入时含义未定、后续使用才显露越权，才进一步研究如何判定委托范围、版本传播与合法覆盖。完整轨迹 LLM 审计及移除版本连接的消融用于检验：结构化回溯是否真的减少误报或审计成本，而非仅增加实现复杂度。当前实现与实验边界见[阶段二运行时授权证明](STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[程序化规则实验](PROGRAMMATIC_RULE_COMPLETION_V1.md)。
+第三步只针对闭环中暴露出的难例深化方法。核心对照是“写入时立即检查”与“最终只检查工具和参数来源”：若它们已经能以相同误报拦住攻击，版本回溯没有独立价值；若写入时含义未定、后续使用才显露越权，才进一步研究如何判定委托范围、版本传播与合法覆盖。完整轨迹 LLM 审计及移除版本连接的消融用于检验：结构化回溯是否真的减少误报或审计成本，而非仅增加实现复杂度。当前实现与实验边界见[阶段二运行时授权证明](progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[程序化规则实验](PROGRAMMATIC_RULE_COMPLETION_V1.md)。
 
 ## 参考文献
 

@@ -57,16 +57,17 @@ if decision.verdict == "allow":
 - `alert`：效果、参数、约束、预算或范围存在明确冲突；
 - `review`：来源、动态次数、中间能力或语义证据仍不充分。
 
-当前方法总览见[Progressive Authorization Proof](docs/METHOD_OVERVIEW.md)，三个阶段的细节分别见[授权编译](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
+当前方法总览见[Progressive Authorization Proof](docs/progressive-authorization-proof/METHOD_OVERVIEW.md)，三个阶段的细节分别见[授权编译](docs/progressive-authorization-proof/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/progressive-authorization-proof/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
 
 ## 文档索引
 
 ### 1. 新成员首先阅读
 
-1. [方法概览：Progressive Authorization Proof](docs/METHOD_OVERVIEW.md)：从核心矛盾、Effect 差异层次到三个子方法的统一流程。
-2. [阶段一授权编译细节](docs/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：五元组、Authorization IR、IR-to-DAG lowering 规则及贯穿案例。
-3. [阶段二运行时授权证明细节](docs/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、逐层判定、REVIEW 分类及贯穿案例。
-4. [阶段三语义证明补全细节](docs/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：原子证明义务、最小证据包、三态语义证明、冲突校验和终局处置。
+1. [方法概览：Progressive Authorization Proof](docs/progressive-authorization-proof/METHOD_OVERVIEW.md)：从核心矛盾、Effect 差异层次到三个子方法的统一流程。
+2. [阶段一授权编译细节](docs/progressive-authorization-proof/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)：Authorization IR、工具契约校验、IR-to-DAG lowering 规则及贯穿案例。
+3. [阶段二运行时授权证明细节](docs/progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、调用检查、状态验证及贯穿案例。
+4. [阶段三语义证明补全细节](docs/progressive-authorization-proof/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：局部审计问题、最小证据、三态语义证明、补证和终局处置。
+5. [双基准实验结果](docs/progressive-authorization-proof/EXPERIMENT_RESULTS.md)：当前最佳整体效果、阶段二程序证明效果及阶段三的独立增量。
 
 实验结果、方法演进和状态版本研究保留在后续索引中，不再与当前四份方法文档混排。
 

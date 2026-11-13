@@ -35,3 +35,5 @@ Progressive Authorization Proof 由三个前后衔接的子方法组成。**Auth
 ```
 
 详细设计分别见：[阶段一：授权编译](STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[阶段二：运行时授权证明](STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[阶段三：语义证明补全](STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
+
+当前双基准全量结果及各阶段增量见[实验结果](EXPERIMENT_RESULTS.md)。
