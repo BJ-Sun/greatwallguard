@@ -83,6 +83,8 @@ class DagDecision:
             "invalid_dynamic_budget_policy",
             "invalid_authorization_budget",
             "parameter_state_version_unresolved",
+            "compiler_binding_unresolved",
+            "bounded_derived_effect_requires_proof",
         }
         confirmation_reasons = {
             "delegation_requires_confirmation",
@@ -318,10 +320,13 @@ class AuthorizationDAGVerifier:
             return DagDecision(
                 "review", "unscoped_observation_requires_review"
             ), evaluation
-        effects = [node for node in self.graph.nodes.values()
-                   if node.kind == "effect" and node.attrs.get("tool") == tool]
+        matching_effects = [node for node in self.graph.nodes.values()
+                            if node.kind == "effect" and node.attrs.get("tool") == tool]
+        effects = [node for node in matching_effects if node.status != "revoked"]
         if not effects:
             evaluation = deepcopy(self.graph)
+            if matching_effects:
+                return DagDecision("alert", "authorization_revoked"), evaluation
             matching = next((
                 item for item in self.graph.delegations
                 if item.authority == "effects" and tool in item.allowed_tools
@@ -377,6 +382,13 @@ class AuthorizationDAGVerifier:
             binding = evaluation.nodes[edge.source]
             field_name = str(edge.attrs.get("field"))
             source_type = binding.attrs.get("source_type")
+            if source_type == "semantic_unresolved":
+                binding.status = "unknown"
+                return DagDecision(
+                    "review", "compiler_binding_unresolved", field_name,
+                    effect_id=effect.id,
+                    missing_evidence=(str(binding.attrs.get("reason", field_name)),),
+                ), evaluation
             if source_type == "forbidden_absent":
                 if field_name in arguments and arguments[field_name] is not None:
                     binding.status = "failed"
@@ -400,10 +412,18 @@ class AuthorizationDAGVerifier:
                         effect_id=effect.id,
                     ), evaluation
                 continue
-            actual_values = arguments[field_name]
-            actual_values = actual_values if isinstance(actual_values, list) else [actual_values]
             if source_type == "trusted_literal":
                 expected = list(binding.attrs.get("values", []))
+                actual = arguments[field_name]
+                # A list may be the value of one typed parameter (ports,
+                # recipients, attachments) rather than several alternative
+                # scalar bindings.  Preserve it when the authorization also
+                # contains a list literal.
+                actual_values = (
+                    [actual] if isinstance(actual, list)
+                    and any(isinstance(value, list) for value in expected)
+                    else actual if isinstance(actual, list) else [actual]
+                )
                 observed = [value for value in actual_values if value is not None]
                 if not observed or not all(
                         any(self._literal_in_scope(field_name, actual, allowed)
@@ -470,6 +490,8 @@ class AuthorizationDAGVerifier:
                 binding.status = "proved"
                 proof_nodes.append(binding.id)
                 continue
+            actual_values = arguments[field_name]
+            actual_values = actual_values if isinstance(actual_values, list) else [actual_values]
             deferred_present = True
             if evaluator is not None:
                 dag_proof = evaluator.prove_binding(binding.id, actual_values)

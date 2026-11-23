@@ -157,6 +157,28 @@ class AuthorizationDAGTests(unittest.TestCase):
         self.assertEqual(decision.verdict, "alert")
         self.assertEqual(decision.reason, "explicit_parameter_mismatch")
 
+    def test_list_literal_is_compared_as_one_typed_parameter(self):
+        graph = AuthorizationDAG()
+        graph.add_node(AuthorizationNode(
+            "trusted_user_intent", "source", "TrustedText",
+            attrs={"source_type": "trusted_user", "text": "scan port 443"},
+        ))
+        graph.add_node(AuthorizationNode(
+            "scan", "effect", "network_probe",
+            attrs={"tool": "scan", "critical_fields": ["ports"]},
+        ))
+        graph.add_node(AuthorizationNode(
+            "ports", "source", "List",
+            attrs={"source_type": "trusted_literal", "values": [[443]]},
+        ))
+        graph.add_edge(AuthorizationEdge(
+            "ports", "scan", "binds", attrs={"field": "ports"},
+        ))
+        decision, _ = AuthorizationDAGVerifier(graph).verify(
+            "scan", {"ports": [443]}, RuntimeRelationResolver("scan port 443"),
+        )
+        self.assertEqual(decision.verdict, "allow")
+
 
 if __name__ == "__main__":
     unittest.main()

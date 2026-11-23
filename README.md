@@ -57,7 +57,7 @@ if decision.verdict == "allow":
 - `alert`：效果、参数、约束、预算或范围存在明确冲突；
 - `review`：来源、动态次数、中间能力或语义证据仍不充分。
 
-当前方法总览见[Progressive Authorization Proof](docs/progressive-authorization-proof/METHOD_OVERVIEW.md)，三个阶段的细节分别见[授权编译](docs/progressive-authorization-proof/STAGE1_AUTHORIZATION_COMPILATION_DETAILS.md)、[运行时授权证明](docs/progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)和[语义证明补全](docs/progressive-authorization-proof/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)。
+当前方法、设计细节和实验结论统一收录在 [Progressive Authorization Proof 文档索引](docs/progressive-authorization-proof/README.md)。
 
 ## 文档索引
 
@@ -68,6 +68,8 @@ if decision.verdict == "allow":
 3. [阶段二运行时授权证明细节](docs/progressive-authorization-proof/STAGE2_RUNTIME_AUTHORIZATION_PROOF_DETAILS.md)：运行时证据、动态 Binding 求值、调用检查、状态验证及贯穿案例。
 4. [阶段三语义证明补全细节](docs/progressive-authorization-proof/STAGE3_SEMANTIC_PROOF_COMPLETION_DETAILS.md)：局部审计问题、最小证据、三态语义证明、补证和终局处置。
 5. [双基准实验结果](docs/progressive-authorization-proof/EXPERIMENT_RESULTS.md)：当前最佳整体效果、阶段二程序证明效果及阶段三的独立增量。
+6. [GreatWallBench 三阶段全量结果](docs/progressive-authorization-proof/GREATWALLBENCH_FULL_RESULTS.md)：240 条正常任务与 405 条严格双成功攻击上的当前最佳结果。
+7. [逐轮授权时间线](docs/progressive-authorization-proof/MULTITURN_AUTHORIZATION_TIMELINE.md)与[受限派生 Effect](docs/progressive-authorization-proof/BOUNDED_DERIVED_EFFECT.md)：多轮授权维护和持久中间产物的通用扩展。
 
 实验结果、方法演进和状态版本研究保留在后续索引中，不再与当前四份方法文档混排。
 

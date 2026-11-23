@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import re
 from typing import Any, Mapping, Sequence
 
 
@@ -21,6 +22,7 @@ REASON_TO_CLAIM = {
     "instrumental_capability_requires_link_proof": "instrumental_effect_link",
     "instrumental_capability_unproved": "instrumental_effect_link",
     "unplanned_effect_requires_capability_proof": "instrumental_effect_link",
+    "bounded_derived_effect_requires_proof": "bounded_derived_effect",
     "authorization_budget_requires_proof": "authorization_budget",
 }
 
@@ -119,7 +121,13 @@ def _flatten(value: Any) -> list[str]:
             output.extend(_flatten(item))
         return output
     text = str(value).strip()
-    return [text] if text else []
+    if not text:
+        return []
+    # Generated fields seldom reappear verbatim in source observations.
+    # Stable lexical atoms preserve IDs, hosts, paths, dates, and names for
+    # provenance ranking without exposing the full trace to the auditor.
+    atoms = re.findall(r"[\w.@:/-]{4,}", text, flags=re.UNICODE)
+    return list(dict.fromkeys((text, *atoms)))
 
 
 def _question(claim_type: str, field: str | None, tool: str) -> tuple[str, str]:
@@ -135,6 +143,10 @@ def _question(claim_type: str, field: str | None, tool: str) -> tuple[str, str]:
         "observation_effect": ("observation_within_scope", "Can this observation occur without an unauthorized outbound effect?"),
         "observation_scope": ("observation_within_scope", "Is this observation restricted to the task's authorized source scope?"),
         "instrumental_effect_link": ("instrumental_to_authorized_effect", "Is this intermediate effect necessary and scoped to an authorized terminal effect?"),
+        "bounded_derived_effect": (
+            "bounded_derivation_holds",
+            "Is this persistent intermediate effect necessary for an authorized terminal effect, task-scoped, provenance-bounded, and unable to expand future authority?",
+        ),
         "authorization_budget": ("within_authorized_budget", "Is this additional effect instance within the user's authorized object budget?"),
     }
     return questions.get(claim_type, ("authorization_relation", "Does the trusted request authorize this exact call?"))

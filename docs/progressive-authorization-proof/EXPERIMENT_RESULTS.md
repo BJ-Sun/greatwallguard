@@ -2,6 +2,8 @@
 
 本文先报告三阶段方法的整体效果，再分析正常任务被拒绝或要求确认的原因，以及攻击为何仍有少量进入确认，最后说明阶段二和阶段三分别解决了什么问题、带来了多少增量。
 
+本文主体保留 AgentDojo 与 AgentDyn 的跨 benchmark 结果。GreatWallBench 的最新逐轮授权全量实验另覆盖240条正常任务和405条严格双成功攻击：加入 Bounded Derived Effect 后，正常任务最终为231 `ALLOW`、8 `DENY`、1 `CONFIRM`；攻击目标为404 `DENY`、1 `CONFIRM`、0 `ALLOW`。完整口径、分目标结果和剩余误判分析见 [GreatWallBench 三阶段全量结果](GREATWALLBENCH_FULL_RESULTS.md)。
+
 实验采用**冻结轨迹上的授权回放**。正常侧使用 benchmark 标准工具轨迹，攻击侧检查官方攻击目标调用；Authorization DAG 只根据可信用户请求和工具 schema 生成，不读取攻击文本、攻击标签或任务 ID。数据包括 AgentDojo 的 97 个正常任务与 609 个具有实际目标动作的攻击组合，以及 AgentDyn 的 60 个正常任务与 560 个攻击组合，共计 157 个正常任务和 1,169 个有效攻击组合。该口径衡量候选调用的授权判定能力，不等同于重新运行受害模型后的任务完成率或端到端 ASR。
 
 ## 1. 当前整体效果

@@ -17,6 +17,9 @@ experiments/evidence_v1/
 experiments/claude_longrun_session.jsonl
 experiments/*_live/
 experiments/*_graph/
+experiments/greatwallbench_full/authorization_cache/
+experiments/greatwallbench_full/authorization_update_cache/
+experiments/greatwallbench_full/stage3_cache/
 # Full OpenClaw workspaces and model logs are kept locally; selected frozen
 # benign cases and graph projections live in dataset/benign-controls/cases.
 dataset/benign-controls/raw-runs/

@@ -35,6 +35,29 @@ class ProofPacketBuilderTests(unittest.TestCase):
         self.assertEqual([item.ref for item in packet.evidence], ["E0", "E1"])
         self.assertFalse(packet.omitted_evidence_refs)
 
+    def test_generated_artifact_selects_factual_source_by_lexical_atoms(self):
+        packet = ProofPacketBuilder(max_evidence_items=1).build(
+            obligation_id="o2",
+            trusted_user_request="Verify portal.internal and write a handoff.",
+            pending_call={
+                "tool": "workspace_state_change",
+                "arguments": {
+                    "path": "handoff.md",
+                    "content": "portal.internal scan-001 reports HTTPS port 443 open",
+                },
+            },
+            review_reason="bounded_derived_effect_requires_proof",
+            review_field=None,
+            execution_prefix=[
+                {"tool": "list_files", "arguments": {},
+                 "observation": "unrelated document inventory"},
+                {"tool": "mock_network_scan", "arguments": {"target": "portal.internal"},
+                 "observation": {"scan_id": "scan-001", "port": 443,
+                                 "protocol": "https", "status": "open"}},
+            ],
+        )
+        self.assertEqual(packet.evidence[0].tool, "mock_network_scan")
+
 
 if __name__ == "__main__":
     unittest.main()

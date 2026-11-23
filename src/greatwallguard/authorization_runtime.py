@@ -12,6 +12,7 @@ from .capability_derivation import CapabilityRule, ScopedCapabilityDeriver
 from .dag_evidence_evaluator import DAGEvidenceEvaluator
 from .runtime_relation_resolver import RuntimeRelationResolver
 from .versioned_evidence import StateVersion, VersionLedger
+from .derived_effects import BoundedDerivedEffectPolicy
 
 
 @dataclass(frozen=True)
@@ -45,7 +46,8 @@ class AuthorizationRuntime:
                  capability_rules: Iterable[CapabilityRule] = (),
                  observation_contracts: Iterable[ObservationContract] = (),
                  known_effect_tools: Iterable[str] = (),
-                 provisional_effect_tools: Iterable[str] | None = None) -> None:
+                 provisional_effect_tools: Iterable[str] | None = None,
+                 derived_effect_policy: BoundedDerivedEffectPolicy | None = None) -> None:
         self.graph = graph
         intent = graph.nodes.get("trusted_user_intent")
         self.user_message = user_message if user_message is not None else (
@@ -66,6 +68,7 @@ class AuthorizationRuntime:
             None if provisional_effect_tools is None
             else frozenset(provisional_effect_tools)
         )
+        self.derived_effect_policy = derived_effect_policy
         self.observation_contracts = {
             contract.tool: contract for contract in observation_contracts
         }
@@ -124,6 +127,12 @@ class AuthorizationRuntime:
             derived = ScopedCapabilityDeriver(
                 self.graph, evaluator, self.capability_rules,
             ).derive(tool, arguments)
+            if derived is not None:
+                decision = derived
+        if (decision.verdict == "alert"
+                and decision.reason == "effect_not_authorized"
+                and self.derived_effect_policy is not None):
+            derived = self.derived_effect_policy.derive(tool, arguments, self.graph)
             if derived is not None:
                 decision = derived
         if (decision.verdict == "alert"
@@ -291,6 +300,7 @@ class AuthorizationRuntime:
         if effect_id not in self.graph.nodes or self.graph.nodes[effect_id].kind != "effect":
             raise KeyError(f"unknown effect authorization: {effect_id}")
         self.revoked.add(effect_id)
+        self.graph.nodes[effect_id].status = "revoked"
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -386,6 +396,9 @@ class AuthorizationRuntime:
             for effect_id, counts in value.get("consumed_bindings", {}).items()
         }
         runtime.revoked = {str(item) for item in value.get("revoked", [])}
+        for effect_id in runtime.revoked:
+            if effect_id in runtime.graph.nodes:
+                runtime.graph.nodes[effect_id].status = "revoked"
         ledger = value.get("version_ledger")
         if isinstance(ledger, Mapping):
             runtime.version_ledger = VersionLedger.from_dict(ledger)

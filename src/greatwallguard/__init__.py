@@ -56,6 +56,15 @@ from .structured_effect_authorization import (
 from .schema_grounded_authorization import EffectContract, SchemaGroundedAuthorization
 from .runtime_relation_resolver import ParameterProof, RuntimeFact, RuntimeRelationResolver
 from .versioned_evidence import StateVersion, VersionLedger, VersionProof
+from .persistent_state import PersistentStateMonitor, StateChangeEvidence
+from .derived_effects import BoundedDerivedEffectPolicy, DerivedEffectCandidate
+from .authorization_timeline import (
+    AuthorizationTimeline, AuthorizationUpdateRecord, merge_authorization_dag,
+)
+from .authorization_update_compiler import (
+    AuthorizationUpdateKind, AuthorizationUpdatePlan,
+    ConstrainedAuthorizationUpdateCompiler, active_effect_summary,
+)
 from .evidence_relations import EvidenceRelation, SourceRef, relation_from_rows
 from .authorization_dag import (
     AuthorizationDAG,
@@ -82,7 +91,7 @@ from .capability_derivation import (
 from .authorization_runtime import (
     AuthorizationRuntime, ObservationContract, PendingAuthorization,
 )
-from .method import GreatWallGuardMethod
+from .method import GreatWallGuardMethod, GreatWallGuardSession
 from .final_gateway import (
     EffectSafetyContract,
     EvidenceRecoveryAction,
@@ -246,4 +255,8 @@ __all__ = [
     "JsonProofAuditor",
     "JsonTerminalAuditor",
     "PROOF_SYSTEM_PROMPT",
+    "PersistentStateMonitor",
+    "StateChangeEvidence",
+    "BoundedDerivedEffectPolicy",
+    "DerivedEffectCandidate",
 ]

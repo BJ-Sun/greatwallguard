@@ -22,7 +22,7 @@ from .schema_grounded_authorization import EffectContract, SchemaGroundedAuthori
 
 COMPARATORS = frozenset({"eq", "neq", "gt", "gte", "lt", "lte", "contains"})
 AGGREGATES = frozenset({"argmax", "argmin", "max", "min", "count", "sum"})
-SOURCE_OPS = frozenset({"literal", "absent", "tool_result"})
+SOURCE_OPS = frozenset({"literal", "absent", "tool_result", "unresolved"})
 REVIEW_REASONS = frozenset({"external_action_delegation", "ambiguous_request"})
 
 
@@ -85,7 +85,8 @@ class ConstrainedIntentDAGCompiler:
     def __init__(self, contracts: Iterable[EffectContract],
                  observation_tools: Iterable[ObservationTool],
                  backend: IntentCompilerBackend, *, max_repair_attempts: int = 1,
-                 check_explicit_effect_completeness: bool = True) -> None:
+                 check_explicit_effect_completeness: bool = True,
+                 allow_partial: bool = False) -> None:
         self.contracts = tuple(contracts)
         self.observation_tools = tuple(observation_tools)
         self.backend = backend
@@ -93,6 +94,8 @@ class ConstrainedIntentDAGCompiler:
             raise ValueError("max_repair_attempts cannot be negative")
         self.max_repair_attempts = max_repair_attempts
         self.check_explicit_effect_completeness = check_explicit_effect_completeness
+        self.allow_partial = allow_partial
+        self._diagnostics: list[dict[str, str]] = []
         self._contracts_by_tool = {contract.tool: contract for contract in self.contracts}
         self._observation_by_tool = {tool.name: tool for tool in self.observation_tools}
         self._source_tools = {
@@ -104,6 +107,7 @@ class ConstrainedIntentDAGCompiler:
 
     def compile(self, user_message: str, *, version: str = "intent-auth-v1"
                 ) -> AuthorizationDAG:
+        self._diagnostics = []
         system_prompt = self.system_prompt()
         user_prompt = f"Trusted user request:\n{user_message}"
         last_error: IntentCompilationError | None = None
@@ -122,7 +126,14 @@ class ConstrainedIntentDAGCompiler:
             try:
                 normalized = self.validate_ir(raw)
                 if self.check_explicit_effect_completeness:
-                    self._validate_explicit_effect_completeness(user_message, normalized)
+                    missing = self._missing_explicit_effects(user_message, normalized)
+                    if missing:
+                        if not self.allow_partial:
+                            raise IntentCompilationError(
+                                "candidate omitted explicit user-requested effect classes: "
+                                f"{missing}"
+                            )
+                        self._add_unresolved_effects(normalized, missing)
                 break
             except IntentCompilationError as error:
                 last_error = error
@@ -132,26 +143,58 @@ class ConstrainedIntentDAGCompiler:
             raise last_error
         return self.lower(normalized, user_message=user_message, version=version)
 
-    def _validate_explicit_effect_completeness(
-            self, user_message: str, ir: Mapping[str, Any]) -> None:
-        """Reject explicit effects omitted by the model without adding grants."""
+    def _missing_explicit_effects(
+            self, user_message: str, ir: Mapping[str, Any]) -> list[str]:
+        """Return explicit effect classes absent from the candidate IR."""
         if "external_action_delegation" in ir.get("review_reasons", []):
             # The finite lexical extractor can confuse the name of a source
             # (for example, "tasks in Alice's email") with an authorized send.
             # Delegated-action requests remain REVIEW rather than receiving a
             # grant or being rejected as an incomplete explicit request.
-            return
+            return []
         baseline = SchemaGroundedAuthorization(user_message, self.contracts)
         # Completeness is checked at the user-visible effect level. Requiring
         # every concrete tool that shares an effect would freeze one execution
         # plan and falsely demand unrelated tools from the same capability.
         expected = {grant.effect for grant in baseline.grants}
         observed = {str(grant["effect"]) for grant in ir.get("grants", [])}
-        missing = sorted(expected - observed)
-        if missing:
-            raise IntentCompilationError(
-                f"candidate omitted explicit user-requested effect classes: {missing}"
-            )
+        return sorted(expected - observed)
+
+    def _add_unresolved_effects(self, ir: dict[str, Any], effects: Iterable[str]) -> None:
+        """Preserve omitted explicit effects as REVIEW-only typed grants.
+
+        A placeholder never authorizes a call: every critical binding is an
+        unresolved source, so the runtime can only produce REVIEW.  This keeps
+        a new task inside the finite contract vocabulary without converting a
+        compiler omission into either a crash or a permissive grant.
+        """
+        grants = ir.setdefault("grants", [])
+        existing = {str(item.get("tool")) for item in grants}
+        for effect in effects:
+            candidates = [item for item in self.contracts if item.effect == effect]
+            for contract in candidates:
+                if contract.tool in existing:
+                    continue
+                grants.append({
+                    "grant_id": f"partial:{effect}:{contract.tool}",
+                    "tool": contract.tool,
+                    "effect": contract.effect,
+                    "bindings": {
+                        field: {
+                            "op": "unresolved",
+                            "reason": "compiler_omitted_explicit_effect",
+                        }
+                        for field in contract.critical_fields
+                    },
+                    "constraints": [],
+                    "budget": 1,
+                })
+                existing.add(contract.tool)
+            self._diagnostics.append({
+                "code": "missing_explicit_effect",
+                "detail": effect,
+            })
+        ir["compiler_diagnostics"] = list(self._diagnostics)
 
     def system_prompt(self) -> str:
         contracts = [
@@ -251,6 +294,12 @@ class ConstrainedIntentDAGCompiler:
             tool = grant.get("tool")
             contract = self._contracts_by_tool.get(tool)
             if contract is None:
+                if self.allow_partial:
+                    self._diagnostics.append({
+                        "code": "unknown_effect_tool",
+                        "detail": repr(tool),
+                    })
+                    continue
                 raise IntentCompilationError(f"unknown effect tool: {tool!r}")
             if grant.get("effect") != contract.effect:
                 raise IntentCompilationError(f"effect does not match contract for {tool}")
@@ -262,9 +311,35 @@ class ConstrainedIntentDAGCompiler:
             if observed != expected:
                 missing = sorted(expected - observed)
                 extra = sorted(observed - expected)
-                raise IntentCompilationError(
-                    f"critical bindings mismatch for {tool}; missing={missing}, extra={extra}"
-                )
+                # In partial compilation mode the model may propose a
+                # semantically useful restriction that the current tool
+                # contract cannot observe (for example the full contents of
+                # a versioned workspace write).  Such a restriction must not
+                # be mistaken for an executable proof condition, but it also
+                # need not invalidate the contract-grounded fields that are
+                # available.  Keep only contract fields and retain an
+                # explicit diagnostic for the discarded restriction.
+                if self.allow_partial and not missing and extra:
+                    self._diagnostics.append({
+                        "kind": "unobservable_extra_binding",
+                        "grant_id": str(grant_id),
+                        "tool": str(tool),
+                        "fields": extra,
+                    })
+                    bindings = {
+                        field: expr for field, expr in bindings.items()
+                        if field in expected
+                    }
+                    observed = set(bindings)
+                    extra = []
+                if observed == expected:
+                    pass
+                else:
+                    missing = sorted(expected - observed)
+                    extra = sorted(observed - expected)
+                    raise IntentCompilationError(
+                        f"critical bindings mismatch for {tool}; missing={missing}, extra={extra}"
+                    )
             normalized_bindings = {
                 str(field): self._validate_expr(expr, path=f"{grant_id}.{field}")
                 for field, expr in bindings.items()
@@ -287,6 +362,7 @@ class ConstrainedIntentDAGCompiler:
             "review_reasons": list(dict.fromkeys(review_reasons)),
             "delegations": delegations,
             "grants": normalized,
+            "compiler_diagnostics": list(self._diagnostics),
         }
 
     def _validate_delegations(self, value: Any) -> list[dict[str, Any]]:
@@ -316,14 +392,26 @@ class ConstrainedIntentDAGCompiler:
             allowed_fields = raw.get("allowed_fields", [])
             allowed_effects = raw.get("allowed_effects", [])
             allowed_tools = raw.get("allowed_tools", [])
+            normalized_lists: dict[str, list[str]] = {}
             for name, items, allowed in (
                 ("allowed_fields", allowed_fields, field_names),
                 ("allowed_effects", allowed_effects, effect_names),
                 ("allowed_tools", allowed_tools, tool_names),
             ):
-                if (not isinstance(items, list)
-                        or any(not isinstance(item, str) or item not in allowed for item in items)):
+                if not isinstance(items, list):
                     raise IntentCompilationError(f"delegation {name} contains unknown values")
+                unknown = [item for item in items
+                           if not isinstance(item, str) or item not in allowed]
+                if unknown and not self.allow_partial:
+                    raise IntentCompilationError(f"delegation {name} contains unknown values")
+                if unknown:
+                    self._diagnostics.append({
+                        "code": f"unknown_delegation_{name}",
+                        "detail": repr(unknown),
+                    })
+                normalized_lists[name] = [
+                    item for item in items if isinstance(item, str) and item in allowed
+                ]
             constraints = raw.get("constraints", {})
             if not isinstance(constraints, Mapping):
                 raise IntentCompilationError("delegation constraints must be an object")
@@ -334,9 +422,9 @@ class ConstrainedIntentDAGCompiler:
                 "delegation_id": delegation_id,
                 "source": source,
                 "authority": authority,
-                "allowed_fields": list(dict.fromkeys(allowed_fields)),
-                "allowed_effects": list(dict.fromkeys(allowed_effects)),
-                "allowed_tools": list(dict.fromkeys(allowed_tools)),
+                "allowed_fields": list(dict.fromkeys(normalized_lists["allowed_fields"])),
+                "allowed_effects": list(dict.fromkeys(normalized_lists["allowed_effects"])),
+                "allowed_tools": list(dict.fromkeys(normalized_lists["allowed_tools"])),
                 "constraints": dict(constraints),
                 "requires_confirmation": requires_confirmation,
                 "evidence": str(raw.get("evidence", "")),
@@ -376,6 +464,8 @@ class ConstrainedIntentDAGCompiler:
         if not isinstance(expr, Mapping):
             raise IntentCompilationError(f"{path} expression must be an object")
         op = expr.get("op")
+        if op == "unresolved":
+            return {"op": "unresolved", "reason": str(expr.get("reason", "semantic_gap"))}
         if op == "literal":
             if "value" not in expr:
                 raise IntentCompilationError(f"{path} literal is missing value")
@@ -389,6 +479,12 @@ class ConstrainedIntentDAGCompiler:
             tool = expr.get("tool")
             source = self._source_tools.get(tool)
             if source is None:
+                if self.allow_partial:
+                    self._diagnostics.append({
+                        "code": "unknown_observation_tool",
+                        "detail": f"{path}: {tool!r}",
+                    })
+                    return {"op": "unresolved", "reason": "unknown_observation_tool"}
                 raise IntentCompilationError(f"{path} references unknown observation tool {tool!r}")
             result = {"op": "tool_result", "tool": tool}
             field_path = expr.get("path")
@@ -397,6 +493,15 @@ class ConstrainedIntentDAGCompiler:
                     raise IntentCompilationError(f"{path} tool_result path must be a string")
                 root = field_path.split(".", 1)[0]
                 if source.output_fields and root not in source.output_fields:
+                    if self.allow_partial:
+                        self._diagnostics.append({
+                            "code": "observation_path_outside_schema",
+                            "detail": f"{path}: {tool}.{field_path}",
+                        })
+                        return {
+                            "op": "unresolved",
+                            "reason": "observation_path_outside_schema",
+                        }
                     raise IntentCompilationError(
                         f"{path} path {field_path!r} is outside {tool} output schema"
                     )
@@ -413,6 +518,12 @@ class ConstrainedIntentDAGCompiler:
                 for i, item in enumerate(expr["sources"])
             ]
         else:
+            if self.allow_partial:
+                self._diagnostics.append({
+                    "code": "transform_source_missing",
+                    "detail": path,
+                })
+                return {"op": "unresolved", "reason": "transform_source_missing"}
             raise IntentCompilationError(f"{path} transform requires source or sources")
         if op in {"select", "project", "aggregate"}:
             field = expr.get("field")
@@ -467,7 +578,9 @@ class ConstrainedIntentDAGCompiler:
         graph.add_node(AuthorizationNode(
             "trusted_user_intent", "source", "TrustedUserMessage",
             attrs={"source_type": "trusted_user", "text": user_message,
-                   "review_reasons": review_reasons}, status="proved",
+                   "review_reasons": review_reasons,
+                   "compiler_diagnostics": list(ir.get("compiler_diagnostics", []))},
+            status="proved",
         ))
         for delegation in delegations:
             graph.add_node(AuthorizationNode(
@@ -512,6 +625,14 @@ class ConstrainedIntentDAGCompiler:
                         "source_type": "runtime_deferred", "tool": expr["tool"],
                         "path": expr.get("path"),
                     }, status="unbound",
+                ))
+                return node_id
+            if op == "unresolved":
+                graph.add_node(AuthorizationNode(
+                    node_id, "source", "UnresolvedValue", attrs={
+                        "source_type": "semantic_unresolved",
+                        "reason": expr.get("reason", "semantic_gap"),
+                    }, status="unknown",
                 ))
                 return node_id
             graph.add_node(AuthorizationNode(

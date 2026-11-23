@@ -32,6 +32,9 @@ class VersionLedger:
     def __init__(self) -> None:
         self._versions: dict[tuple[str, str], StateVersion] = {}
 
+    def contains(self, object_id: str, version_id: str) -> bool:
+        return (object_id, version_id) in self._versions
+
     def record(self, version: StateVersion) -> None:
         key = (version.object_id, version.version_id)
         if key in self._versions:

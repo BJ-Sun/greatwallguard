@@ -150,6 +150,22 @@ class RuntimeRelationResolver:
             )
         )
 
+    def extend_trusted_message(self, user_message: str) -> None:
+        """Append a newly arrived trusted turn without losing runtime facts."""
+        message = str(user_message).strip()
+        if not message:
+            return
+        self.user_message = (
+            f"{self.user_message}\n{message}" if self.user_message else message
+        )
+        if re.search(
+            r"\b(?:rated?|rating|price)\b.{0,48}"
+            r"(?:higher|above|over|under|below|less than)",
+            message,
+            re.I,
+        ):
+            self.requires_guard = True
+
     def observe(self, call_id: str, tool: str, result: Any, *,
                 arguments: Mapping[str, Any] | None = None) -> None:
         normalized = _dump(result)

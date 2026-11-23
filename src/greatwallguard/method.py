@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Iterable, Mapping
 
+from .authorization_dag import AuthorizationDAG
 from .authorization_runtime import AuthorizationRuntime, ObservationContract
+from .authorization_timeline import AuthorizationTimeline, AuthorizationUpdateRecord
+from .authorization_update_compiler import ConstrainedAuthorizationUpdateCompiler
 from .capability_derivation import CapabilityRule
 from .intent_dag_compiler import (
     ConstrainedIntentDAGCompiler, IntentCompilerBackend, ObservationTool,
@@ -24,7 +28,8 @@ class GreatWallGuardMethod:
                  observation_contracts: Iterable[ObservationContract] = (),
                  source_aliases: Mapping[str, Iterable[str]] | None = None,
                  capability_rules: Iterable[CapabilityRule] = (),
-                 provisional_effect_tools: Iterable[str] | None = None) -> None:
+                 provisional_effect_tools: Iterable[str] | None = None,
+                 allow_partial_compilation: bool = True) -> None:
         self.effect_contracts = tuple(effect_contracts)
         self.observation_tools = tuple(observation_tools)
         self.observation_contracts = tuple(observation_contracts)
@@ -41,6 +46,10 @@ class GreatWallGuardMethod:
         )
         self.compiler = ConstrainedIntentDAGCompiler(
             self.effect_contracts, self.observation_tools, intent_backend,
+            allow_partial=allow_partial_compilation,
+        )
+        self.update_compiler = ConstrainedAuthorizationUpdateCompiler(
+            self.compiler, intent_backend,
         )
 
     def start_task(self, trusted_user_message: str, *,
@@ -54,6 +63,19 @@ class GreatWallGuardMethod:
             known_effect_tools=(contract.tool for contract in self.effect_contracts),
             provisional_effect_tools=self.provisional_effect_tools,
         )
+
+    def start_session(self, *, version: str = "intent-auth-timeline-v1"
+                      ) -> "GreatWallGuardSession":
+        """Start an empty online session whose authorization grows by user turn."""
+        runtime = AuthorizationRuntime(
+            AuthorizationDAG(version=version), user_message="",
+            source_aliases=self.source_aliases,
+            capability_rules=self.capability_rules,
+            observation_contracts=self.observation_contracts,
+            known_effect_tools=(contract.tool for contract in self.effect_contracts),
+            provisional_effect_tools=self.provisional_effect_tools,
+        )
+        return GreatWallGuardSession(self, runtime, AuthorizationTimeline(runtime))
 
     @staticmethod
     def restore_task(snapshot) -> AuthorizationRuntime:
@@ -71,4 +93,24 @@ class GreatWallGuardMethod:
             proof_auditor=proof_auditor,
             evidence_resolver=evidence_resolver,
             terminal_auditor=terminal_auditor,
+        )
+
+
+@dataclass
+class GreatWallGuardSession:
+    """Reusable online facade for turn-ordered authorization maintenance."""
+
+    method: GreatWallGuardMethod
+    runtime: AuthorizationRuntime
+    timeline: AuthorizationTimeline
+
+    def apply_user_turn(self, turn: int,
+                        trusted_user_message: str) -> AuthorizationUpdateRecord:
+        plan = self.method.update_compiler.compile(
+            trusted_message=trusted_user_message,
+            runtime=self.runtime, turn=turn,
+        )
+        return self.method.update_compiler.apply(
+            plan=plan, timeline=self.timeline, turn=turn,
+            trusted_message=trusted_user_message,
         )
