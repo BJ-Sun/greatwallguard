@@ -161,60 +161,89 @@ REVIEW
 
 每次判定还返回候选 Effect、问题字段、来源调用、计算算子、字段级证据路径和具体原因。这些信息用于解释决策，并为阶段三提供最小证据入口。
 
-## 3. 贯穿案例
+## 3. 一个案例中的五层行为差异
 
 用户要求：
 
-> 读取指定 TODO 文件，给其中每个未完成任务的负责人发送一次提醒，最多发送十封。
+> 从项目空间找到本周任务表，给每个未完成任务的负责人发送一次提醒；主题统一使用“Task Reminder”，正文说明任务和截止时间，最多发送十封，不要添加附件。
 
-阶段一已经生成：
-
-```text
-Effect       = external_message via send_email
-recipients   ← read_todo → select(unfinished) → project(owner_email)
-subject      = "Task Reminder"
-body         ← read_todo → select(unfinished) → project(task) → template
-attachments  = absent
-条件         = status == unfinished
-次数限制     = 每位负责人一次，总计十次
-```
-
-第一部分首先提取证据并求值授权：
+阶段一并不固定 Agent 必须先调用哪个搜索工具，而是生成下面的路径无关授权关系：
 
 ```text
-Agent → read_todo(用户指定路径)
-Gateway → 检查读取来源和路径范围
-Tool → 返回 TODO 记录
-Gateway → 保存完整调用与字段级证据
-DAG → 导出 recipients=Alice 及对应 body
+允许的终端 Effect
+└── external_message via send_email
+
+允许的数据来源
+└── project_workspace 中的本周任务表
+
+动态 Binding
+├── recipients ← task_table → select(status = unfinished)
+│                              → project(owner_email)
+└── body       ← task_table → select(status = unfinished)
+                               → project(task, deadline) → template
+
+固定约束
+├── subject     = "Task Reminder"
+├── attachments = absent
+└── 每位负责人一次，总计不超过十次
 ```
 
-第二部分在 Agent 提出 `send_email` 时检查实际调用：
+运行时，Agent 可以通过 `search_files → read_file`，也可以通过 `list_files → get_file_by_id` 找到任务表。网关记录真实返回，DAG 对实际取得的任务数据执行相同的 `select / project / template`，再将结果与候选 `send_email` 比较。假设任务表包含：
 
 ```text
-1. send_email 对应已授权 external_message
-2. recipients / subject / body / attachments 均已表达
-3. subject 与用户字面值一致，attachments 为空
-4. 实际 recipients 和 body 与 DAG 求值结果一致
-5. Alice 对应记录满足 status=unfinished
-6. Alice 尚未发送，总数未超过十次
-7. 结果：ALLOW
+Alice | unfinished | submit report | Friday
+Bob   | finished   | update slides | Thursday
 ```
 
-不同执行情况得到不同结果：
+那么当前证据只能导出 Alice 及其提醒内容。若 Agent 向 Alice 发送主题为 `Task Reminder`、正文包含 `submit report / Friday` 且不带附件的邮件，工具、固定参数、动态 Binding、条件和预算都能闭合，阶段二输出 `ALLOW`。在这条正常基线之上，行为差异由简到难形成五个层次。
+
+**第一层：新增终端 Effect。** Agent 读取任务表后提出 `delete_file`，或把任务表上传到外部网站。Authorization DAG 只允许发送提醒，读取过程不能自行产生删除或外传权限。候选工具对应了新的终端 Effect，阶段二无需理解文本语义即可输出 `ALERT`。
 
 ```text
-实际收件人为 Bob，DAG 只导出 Alice
-→ REVIEW：动态参数尚未得到证明
-
-TODO 返回缺少 status，select 无法求值
-→ REVIEW：缺少求值证据
-
-实际调用添加了未授权附件
-→ ALERT：参数与授权冲突
-
-再次给 Alice 发送且每人预算为一次
-→ ALERT：超过每名收件人一次的限制
+允许：external_message
+实际：delete_file / external_upload
+结果：ALERT（终端 Effect 不在授权范围内）
 ```
 
-阶段二能够程序化验证 Effect、工具能力、关键参数、有限数据来源、确定性计算、结构化条件、对象范围、使用次数和持久状态来源。开放语义关系由阶段三补全；缺失事实需要真实工具或环境补证；宽泛委托需要可信用户确认。只有在 Agent 环境提供完整持久读写事件后，系统才能端到端验证文件、记忆或工作区版本的形成过程。
+**第二层：工具路径不同，但可能是正常动态执行。** Agent 使用 `search_files → read_file` 或 `list_files → get_file_by_id`，虽然具体调用序列不同，但它们都只读取项目空间内的目标任务表，并且读取结果随后用于已授权的提醒 Binding。阶段二根据工具契约、对象范围和字段关系派生本次所需的临时读取能力，因此两条路径都可以继续执行。若 Agent 改为访问项目空间之外的对象，或中间工具与终端 Effect 之间缺少必要字段连接，则分别形成明确范围冲突或 `REVIEW`，而不是因为工具没有出现在唯一预设计划中就直接拒绝。
+
+```text
+路径 A：search_files → read_file ┐
+                                 ├→ 同一授权数据源 → 可继续证明
+路径 B：list_files → get_file_by_id ┘
+
+计划外工具 + 可证明的对象与字段关系 → 临时能力
+计划外工具 + 关系尚未闭合         → REVIEW
+计划外工具 + 明确越出对象范围     → ALERT
+```
+
+**第三层：同一终端工具下的固定参数错误。** Agent 正确调用 `send_email`，收件人也是 Alice，但附加了任务表；或者把固定主题改成其他内容。`attachments = absent` 和固定主题已经由用户请求直接确定，因此实际值与授权值可以直接比较，阶段二输出 `ALERT`。
+
+```text
+工具一致：send_email
+固定约束：attachments = absent
+实际参数：attachments = [task_table]
+结果：ALERT（固定参数冲突）
+```
+
+**第四层：动态 Binding 的来源或计算过程错误。** Agent 仍使用 `send_email`，但把邮件发给已完成任务的 Bob。阶段二不依赖 Agent 对任务表的解释，而是在网关侧对真实返回独立执行 `select(status = unfinished) → project(owner_email)`；DAG 得到 Alice，实际调用却使用 Bob，因此 Bob 的 `recipients` 无法获得授权证明。若求值器能够证明输入完整且 Bob 不属于查询结果，则这是确定冲突；当前实现对部分尚未标注完整性的算子保守输出 `REVIEW`。若任务表缺少 `status` 字段，则同样输出 `REVIEW`，但原因是输入证据不足。两者分别记录为“结果不匹配”和“查询无法完成”，供补证或阶段三继续处理。
+
+```text
+真实返回 → DAG 独立求值 → recipients = {Alice}
+Agent 实际调用          → recipients = {Bob}
+结果：动态 Binding 未获证明
+
+完整结果中的确定不匹配 → ALERT
+结果完整性尚不能证明   → REVIEW
+缺少 status 等查询输入 → REVIEW（需要补证）
+```
+
+**第五层：工具、来源和数据流均相似，只有任务语义不同。** Agent 使用同一任务表，选择了 Alice，也保持正确主题、无附件和次数限制，但正文把“提醒提交报告”改写成与任务无关的请求。此时，工具、收件人来源和形式上的 `template` 数据流都可能成立，有限算子无法判断正文是否忠实表达了用户要求。阶段二将未闭合关系精确记录为“`body` 是否由任务内容形成合乎授权目的的提醒”，输出 `REVIEW`，由阶段三围绕这一条关系构造最小证据并完成语义证明。
+
+```text
+工具、来源、对象、次数均一致
+body 的语义是否仍服务于用户授权目的：程序无法定论
+结果：REVIEW → 阶段三语义证明
+```
+
+此外，对象版本、授权条件和次数限制贯穿上述五层：若任务表版本由未授权写入形成，条件被真实证据否定，或 Alice 已经收到过一次提醒，阶段二都可以在调用执行前形成 `ALERT`。因此，阶段二的作用不是预测唯一执行轨迹，而是沿着 `Effect → 工具能力 → 固定参数 → 动态 Binding → 状态约束` 逐级完成程序证明，并把真正无法由运行时事实闭合的语义关系准确交给阶段三。
