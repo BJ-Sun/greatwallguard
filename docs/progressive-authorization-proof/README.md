@@ -12,6 +12,10 @@
 - [逐轮授权时间线](MULTITURN_AUTHORIZATION_TIMELINE.md)：维护多轮用户指令对授权的新增、收窄、撤销和替换。
 - [受限派生 Effect](BOUNDED_DERIVED_EFFECT.md)：允许服务于已授权终端目标的必要中间文件，同时约束对象、内容来源、可见性和生命周期。
 
+泛化与部署分析：
+
+- [新 Benchmark 适配成本分析](ADAPTATION_COST_ANALYSIS.md)：区分方法适配与评测适配，定义工具契约、能力关系、DSL 和事件接入的量化指标。
+
 实验结果分为两组：
 
 - [AgentDojo 与 AgentDyn 实验](EXPERIMENT_RESULTS.md)：跨 benchmark 的冻结轨迹授权回放，以及各阶段的增量作用。
